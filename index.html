@@ -241,6 +241,7 @@ nav button.on{color:var(--ink)}
   <div class="card"><div class="lbl">Minerals <span>tap a row for top sources</span></div><div id="nMin"></div></div>
   <div class="card"><div class="lbl">Vitamins</div><div id="nVit"></div></div>
   <div class="card"><div class="lbl">Fats &amp; more</div><div id="nFat"></div></div>
+  <div class="card"><div class="lbl">Beyond the label <span>estimates from Deep Dive tab</span></div><div id="nDeep"></div><div class="note" id="deepNote"></div></div>
   <div class="note" style="padding:0 4px 8px">Targets: NIH Dietary Reference Intakes for men 51–70 (Targets tab). Food values per USDA SR28 (Foods tab); blank values count as 0.</div>
 </section>
 
@@ -469,7 +470,7 @@ const LS={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.
 let cfg=LS.get('fuel.cfg',{url:'',token:''});
 const live=()=>!!(cfg.url&&cfg.token);
 let state={date:todayKey(),goals:DEMO_GOALS,foods:DEMO_FOODS,targets:DEMO_TARGETS,day:null,waterAdd:0,wk:'p'};
-if(live()){ state.goals=LS.get('fuel.goals',DEMO_GOALS); state.foods=LS.get('fuel.foods',DEMO_FOODS); state.targets=LS.get('fuel.targets',DEMO_TARGETS); }
+if(live()){ state.deep=LS.get('fuel.deep',[]); state.goals=LS.get('fuel.goals',DEMO_GOALS); state.foods=LS.get('fuel.foods',DEMO_FOODS); state.targets=LS.get('fuel.targets',DEMO_TARGETS); }
 let queue=LS.get('fuel.queue',[]);
 
 function todayKey(){ return keyOf(new Date()); }
@@ -512,7 +513,7 @@ async function load(){
   try{
     const needBoot=!LS.get('fuel.bootAt',0)||Date.now()-LS.get('fuel.bootAt',0)>6*3600e3;
     if(needBoot){ const j=await api({action:'bootstrap',date:state.date});
-      Object.assign(state,{goals:j.goals,foods:j.foods,targets:j.targets||DEMO_TARGETS,day:j.day});
+      Object.assign(state,{goals:j.goals,foods:j.foods,targets:j.targets||DEMO_TARGETS,deep:j.deep||[],day:j.day}); LS.set('fuel.deep',state.deep);
       LS.set('fuel.goals',j.goals); LS.set('fuel.foods',j.foods); LS.set('fuel.targets',state.targets); LS.set('fuel.bootAt',Date.now()); }
     else state.day=await api({action:'day',date:state.date});
     queue.filter(q=>q.action==='addFood'&&q.date===state.date).forEach(q=>{ if(!state.day.entries.some(e=>e._local===q._local)) state.day.entries.push({food:q.food,amount:q.amount,unit:q.unit,time:q.time,date:q.date,_local:q._local}); });
@@ -611,11 +612,49 @@ function renderNut(){
     const bar= g? `<div class="track"><div class="fill" style="width:${Math.min(100,p*100)}%;background:${lvlColor(p)}"></div></div>` : '';
     return `<div class="nu" onclick="this.classList.toggle('open')"><div class="t"><span>${nm}</span><span>${right}</span></div>${bar}
       <div class="why">${why?esc(why)+'<br>':''}Top today: ${esc(sources(k))}</div></div>`; };
-  Object.entries(GROUPS).forEach(([id,keys])=>$('#'+id).innerHTML=keys.map(row).join(''));
+  Object.entries(GROUPS).forEach(([id,keys])=>$('#'+id).innerHTML=keys.map(row).join('')); renderDeep();
   const gaps=Object.keys(tg).filter(k=>NINFO[k]&&T[k]/tg[k]<0.5).sort((a,b)=>T[a]/tg[a]-T[b]/tg[b]);
   $('#gaps').innerHTML= d.entries.length? (gaps.length? gaps.map(k=>`<span class="pill" style="color:var(--warn)">${NINFO[k][0]} ${Math.round(T[k]/tg[k]*100)}%</span>`).join('') : '<div class="empty">No big gaps today.</div>') : '<div class="empty">Log food to see gaps.</div>';
   const sparse=[...new Set(d.entries.map(e=>foodBy(e.food)).filter(f=>f&&f.sparse).map(f=>f.name))];
   $('#sparseNote').innerHTML= sparse.length? `<b>Missing data:</b> ${sparse.map(esc).join(', ')} ${sparse.length>1?'have':'has'} macros only, so vitamins and minerals read low. Fill those rows in the Foods tab.` : '';
+}
+
+
+/* ======================= BEYOND THE LABEL ======================= */
+const DEMO_DEEP=[["Ribeye steak, cooked", "~350–450", "~365", "30–77", "56–74 raw; 49–144 cooked", "2–4", "~88 (raw lean)", "10–46 raw; 30–100 cooked", "0.2–3.5", ""], ["T-bone steak, cooked", "~350–450", "~365", "30–77", "56–74 raw; 49–144 cooked", "1.4–2.7", "~88 (raw lean)", "10–46 raw; 30–100 cooked", "0.2–3.5", ""], ["Top sirloin steak, cooked", "~350–450", "~365", "30–77", "56–74 raw; 49–144 cooked", "1.4", "~88 (raw lean)", "10–46 raw; 30–100 cooked", "0.2–3.5", ""], ["Chuck roast, cooked", "~350–450", "~365", "30–77", "56–74 raw; 49–144 cooked", "4", "~88 (raw lean)", "10–46 raw; 30–100 cooked", "1.6–3.2", ""], ["Brisket, cooked", "~350–450", "~365", "30–77", "56–74 raw; 49–144 cooked", "2–4", "~88 (raw lean)", "10–46 raw; 30–100 cooked", "0.2–3.5", ""], ["Ground brisket burger (raw weight)", "~350–450", "~365", "30–77", "56–74 raw", "2–4", "~88 (raw lean)", "10–46 raw", "", ""], ["Ground beef 80/20, cooked crumbles", "~350–450", "~365", "30–77", "76–87 cooked", "2–4", "", "30–100 cooked", "", ""], ["Beef, steamed/boiled (mixed cuts)", "lower", "lower", "lower", "49–144", "2–4", "", "", "", ""], ["Beef liver, cooked", "", "", "", "", "3.9–5.1", "~561 (raw)", "", "", ""], ["Beef heart, cooked", "", "", "", "", "11.3", "~54 (raw)", "", "", ""], ["Bison / lamb (ground lamb)", "", "~400 (lamb)", "~110 (lamb)", "up to 209 (lamb)", "", "~85 (lamb, raw lean)", "", "", ""], ["Bacon, cooked", "~500 (pork)", "", "40–61 (pork)", "~18 (pork)", "", "", "", "", ""], ["Pork chop, cooked", "~500", "", "40–61", "~18", "", "", "", "0.9–9.6 (ham range)", ""], ["Chicken thigh w/ skin, cooked", "380–430", "", "~169 (dark meat)", "~16", "2.4–2.5", "", "", "12–24", ""], ["Chicken drumstick/leg w/ skin, cooked", "380–430", "", "~169 (dark meat)", "~16", "", "", "", "11–36", ""], ["Chicken wing w/ skin, cooked", "380–430", "", "18–169 (mixed)", "~16", "1.1", "", "", "24–25", ""], ["Chicken liver, cooked", "", "", "", "", "11.6–13.2", "", "", "", ""], ["Turkey w/ skin, cooked", "", "", "", "", "", "", "", "9–31", ""], ["Salmon, Atlantic farmed, cooked", "", "", "~108", "~6", "0.4–0.8", "", "", "0.4–0.5", ""], ["Sardines in oil, canned", "", "", "", "", "0.5–6.4", "", "", "", ""], ["Mackerel, Atlantic, cooked", "", "", "", "", "4.3", "", "", "", ""], ["Tuna, light, canned in water", "~400 (tuna)", "", "", "", "1.5–1.6", "", "", "", ""], ["Shrimp, cooked", "", "", "", "", "0.3", "", "", "0.4", ""], ["Egg, whole (chicken)", "~5", "", "~0.75 (yolk)", "0.3–0.8", "0.07–0.37 (yolk to 0.52)", "", "", "~0.2", ""], ["Butter", "", "", "", "", "0.7", "", "", "~21", ""], ["Heavy cream", "", "", "", "", "0.03–0.12", "", "", "", ""], ["Cheddar / sharp cheddar", "", "", "", "", "0.12–0.21", "", "", "~8.6", "~51 (MK-9, hard cheese)"], ["Gouda / Parmesan", "", "", "", "", "0.12–0.21", "", "", "4–9", "~51 (MK-9, hard cheese)"], ["Colby Jack / Muenster / Mozzarella", "", "", "", "", "0.12–0.21", "", "", "4–9", "~39.5 (MK-9, soft cheese)"], ["Queso fresco", "", "", "", "", "", "", "", "3.6–5.9", ""], ["Whole milk", "~10", "", "~2.3", "~3.3", "0.05–0.19", "", "", "~1.0", ""], ["Greek yogurt, plain whole milk", "", "", "", "", "0.03–0.12", "", "", "0 (nonfat)", ""], ["Cottage cheese 4%", "", "", "", "", "", "", "", "~0.9", ""]];
+const DKEYS=[['creat','Creatine','mg','Muscle + brain energy; only in animal foods'],['carn','Carnosine','mg','Buffers acid in hard sets; only in meat'],
+ ['taur','Taurine','mg','Heart, eyes, bile; dark poultry + seafood richest'],['carni','L-carnitine','mg','Moves fat into cells to burn; red meat is the top food'],
+ ['coq','CoQ10','mg','Cell energy + antioxidant; heart + liver are 3–5x muscle'],['o3','Omega-3 (EPA+DPA+DHA)','mg','Heart, brain; fish + grass-fed beef'],
+ ['cla','CLA','mg','A fat found in beef, lamb, dairy fat'],['k2','Vitamin K2 (MK-4 + MK-9)','mcg','Steers calcium to bone; chicken, butter, aged cheese']];
+// Deep Dive rows that cover several Foods-tab names
+const DALIAS={'Cheddar / sharp cheddar':['Cheddar cheese','Sharp cheddar cheese'],
+ 'Gouda / Parmesan':['Gouda cheese','Parmesan, hard'],
+ 'Colby Jack / Muenster / Mozzarella':['Colby Jack cheese','Muenster cheese','Mozzarella, whole milk'],
+ 'Bison / lamb (ground lamb)':['Ground lamb, cooked'],
+ 'Ground beef 80/20, cooked crumbles':['Ground beef 80/20, cooked crumbles','Ground beef 70/30, cooked crumbles','Ground beef 85/15, cooked crumbles','Ground beef 80/20, cooked']};
+// "~350–450" -> 400; "56–74 raw; 49–144 cooked" -> cooked segment for cooked foods; "(…)" ignored; "lower" -> null
+function dnum(txt,cooked){ if(!txt) return null; let segs=String(txt).split(';').map(x=>x.trim());
+  let seg=segs[0]; if(segs.length>1){ const c=segs.find(x=>/cooked/.test(x)), r=segs.find(x=>/raw/.test(x)); seg=(cooked?c:r)||segs[0]; }
+  seg=seg.replace(/\(.*?\)/g,''); const n=(seg.match(/\d+(\.\d+)?/g)||[]).map(Number); if(!n.length) return null;
+  return n.length>1?(n[0]+n[1])/2:n[0]; }
+function deepMap(){ const rows=(live()&&state.deep&&state.deep.length)?state.deep:DEMO_DEEP; const m={};
+  rows.forEach(r=>{ const names=DALIAS[r[0]]||[r[0]];
+    names.forEach(nm=>{ const ck=/cooked|canned|brewed/i.test(nm);
+      const o={creat:dnum(r[1],ck),carn:dnum(r[2],ck),taur:dnum(r[3],ck),carni:dnum(r[4],ck),coq:dnum(r[5],ck),o3:dnum(r[6],ck),cla:dnum(r[7],ck)};
+      const a=dnum(r[8],ck), b=dnum(r[9],ck); o.k2=(a==null&&b==null)?null:(a||0)+(b||0); m[nm]=o; }); });
+  return m; }
+function renderDeep(){
+  const d=state.day, M=deepMap(); const tot={}, src={}; DKEYS.forEach(([k])=>{tot[k]=0;src[k]=[];});
+  let covered=0; const missing=new Set();
+  d.entries.forEach(e=>{ const r=M[e.food], g=grams(e)/100; const f=foodBy(e.food);
+    if(!r){ if(f&&!/Drinks|Other/.test(f.cat||'')&&!/coffee|monster|pepper|salt/i.test(e.food)) missing.add(e.food); return; } covered++;
+    DKEYS.forEach(([k])=>{ if(r[k]!=null&&r[k]>0){ const v=r[k]*g; tot[k]+=v; src[k].push([e.food,v]); } }); });
+  const nm=f=>{const c=CHIPS.find(c=>c.food===f); return c?c.n:f;};
+  $('#nDeep').innerHTML = !d.entries.length? '<div class="empty">Log food to see these.</div>' : DKEYS.map(([k,label,unit,why])=>{
+    const top=src[k].sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>`${nm(x[0])} ${nice(x[1])}`).join(' · ')||'nothing logged today has data';
+    return `<div class="nu" onclick="this.classList.toggle('open')"><div class="t"><span>${label}</span><span><b>${tot[k]?'≈ '+nice(tot[k]):'–'}</b> ${unit}</span></div>
+      <div class="why">${esc(why)}<br>Top today: ${esc(top)}</div></div>`; }).join('');
+  $('#deepNote').innerHTML = d.entries.length? `No official daily targets exist for these, so they show as amounts. Midpoints of published ranges; tap a row for sources.${missing.size?`<br><b>No data yet:</b> ${[...missing].map(esc).join(', ')}.`:''}` : '';
 }
 
 /* ======================= LOG ======================= */

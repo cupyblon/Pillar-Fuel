@@ -98,6 +98,7 @@ function bootstrap_(date) {
     foods: readFoods_(ss),
     targets: readTargets_(ss),
     exercises: readExercises_(),
+    deep: readDeepDive_(ss),
     day: day_(date, ss)
   };
 }
@@ -321,6 +322,19 @@ function saveCheckout_(b) {
     written.push(h);
   });
   return { ok: true, row: r, written: written };
+}
+
+// Deep Dive tab: row 3 = headers, rows 4+ = food | 9 compound columns (text, may be ranges).
+function readDeepDive_(ss) {
+  const sh = ss.getSheetByName('Deep Dive');
+  if (!sh || sh.getLastRow() < 4) return [];
+  const v = sh.getRange(4, 1, sh.getLastRow() - 3, 10).getDisplayValues();
+  const out = [];
+  for (let i = 0; i < v.length; i++) {
+    if (!v[i][0]) break;                       // stop at the blank row above the legend
+    out.push(v[i].map(String));
+  }
+  return out;
 }
 
 /* ---------- strength training ---------- */
