@@ -13,12 +13,15 @@
  *    Columns E-AJ are ARRAYFORMULAs that do the math from the Foods tab.
  *  - Carnivore Nutrition > Daily Body: A, B, D-H (C = 7-day avg is a formula).
  *  - Pillars Tracker > Daily Log    : check-out columns, matched by header name.
+ *  - Strength Training > Workout Log: A-K, one row per set (L-N are formulas).
+ *  - Strength Training > Sessions   : A-D, one row per workout day (E-G are formulas).
  *
  * Every request must carry your secret token (set it once with setToken()).
  */
 
 const NUTRITION_ID = '1mAkG128NSk-IzEJg-EZTNbNBz7YmmhnlBjJJAYMoyhA';
 const TRACKER_ID   = '1f2wlJqIKezVA1OHgX1OyHAwTmrXsCE019LNKDu0UvuA';
+const STRENGTH_ID  = '1LYztTug2l94R81f5B0mgak0F3pR9GkM-g1hyBuWETpo';
 const TZ           = 'America/Chicago';
 const NOTE_COL     = 37; // Food Log column AK
 
@@ -66,6 +69,8 @@ function doPost(e) {
         case 'removeFood':   return removeFood_(b);
         case 'saveBody':     return saveBody_(b);
         case 'saveCheckout': return saveCheckout_(b);
+        case 'addSets':      return addSets_(b);
+        case 'exercises':    return { exercises: readExercises_() };
         case 'batch':        return { results: b.items.map(function (it) {
                                it.token = b.token; return dispatch_(it); }) };
         default: throw new Error('Unknown action');
@@ -80,6 +85,7 @@ function dispatch_(b) {
     if (b.action === 'removeFood') return removeFood_(b);
     if (b.action === 'saveBody') return saveBody_(b);
     if (b.action === 'saveCheckout') return saveCheckout_(b);
+    if (b.action === 'addSets') return addSets_(b);
     return { error: 'Unknown action' };
   } catch (err) { return { error: String(err.message || err) }; }
 }
@@ -91,6 +97,7 @@ function bootstrap_(date) {
     goals: readGoals_(ss),
     foods: readFoods_(ss),
     targets: readTargets_(ss),
+    exercises: readExercises_(),
     day: day_(date, ss)
   };
 }
@@ -314,6 +321,43 @@ function saveCheckout_(b) {
     written.push(h);
   });
   return { ok: true, row: r, written: written };
+}
+
+/* ---------- strength training ---------- */
+function readExercises_() {
+  const sh = SpreadsheetApp.openById(STRENGTH_ID).getSheetByName('Exercises');
+  const v = sh.getRange(2, 1, Math.max(sh.getLastRow() - 1, 1), 3).getValues();
+  return v.filter(function (r) { return r[0] && r[1]; })
+          .map(function (r) { return { name: String(r[0]), group: String(r[1]), equip: String(r[2]) }; });
+}
+
+// b.sessionType, b.minutes, b.sets = [{exercise, set, reps, weight, time, distance, rest, effort, notes}]
+function addSets_(b) {
+  const ss = SpreadsheetApp.openById(STRENGTH_ID);
+  const log = ss.getSheetByName('Workout Log');
+  const sets = (b.sets || []).filter(function (x) { return x.exercise; });
+  if (!sets.length) throw new Error('No sets');
+  const blank = function (x) { return (x === undefined || x === null) ? '' : x; };
+  const rows = sets.map(function (x) {
+    return [dateObj_(b.date), b.sessionType || 'Weights', x.exercise, blank(x.set), blank(x.reps), blank(x.weight),
+            blank(x.time), blank(x.distance), blank(x.rest), blank(x.effort), blank(x.notes)];
+  });
+  let r = lastDataRow_(log, 1) + 1;
+  if (r + rows.length > log.getMaxRows()) log.insertRowsAfter(log.getMaxRows(), rows.length + 200);
+  log.getRange(r, 1, rows.length, 11).setValues(rows);           // A-K only
+  log.getRange(r, 1, rows.length, 1).setNumberFormat('yyyy-mm-dd');
+  // One Sessions row per date (A-D only); add minutes if the day already has one.
+  const ses = ss.getSheetByName('Sessions');
+  let sr = findDateRow_(ses, b.date);
+  if (!sr) {
+    sr = lastDataRow_(ses, 1) + 1;
+    ses.getRange(sr, 1, 1, 4).setValues([[dateObj_(b.date), b.sessionType || 'Weights', Number(b.minutes) || '', 'Fuel app']]);
+    ses.getRange(sr, 1).setNumberFormat('yyyy-mm-dd');
+  } else if (Number(b.minutes)) {
+    const c = ses.getRange(sr, 3);
+    c.setValue((Number(c.getValue()) || 0) + Number(b.minutes));
+  }
+  return { ok: true, firstRow: r, rows: rows.length };
 }
 
 /* ---------- helpers ---------- */

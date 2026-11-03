@@ -116,9 +116,37 @@ textarea.f{min-height:64px;resize:vertical}
 .ms .w{font-weight:700;font-variant-numeric:tabular-nums;width:64px}
 .ms .x2{flex:1;font-size:13px;color:var(--mute)}
 .ms.done .x2{color:var(--ok)}
+/* train */
+.blk{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin:10px 0}
+.blk h3{margin:0;font-size:15px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.blk h3 small{color:var(--mute);font-weight:500;font-size:12px}
+.blk .tag{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--protein)}
+.rnd{border-top:1px solid var(--line);padding:8px 0 4px;margin-top:8px}
+.rnd .rh{font-size:12px;color:var(--mute);font-weight:600;margin-bottom:4px;display:flex;justify-content:space-between}
+.exl{display:grid;grid-template-columns:1fr 64px 70px;gap:6px;align-items:center;margin:4px 0}
+.exl .nm{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.exl .nm small{display:block;color:var(--mute);font-size:11px}
+.exl input{width:100%;background:var(--chip);border:0;border-radius:10px;padding:9px 6px;text-align:center;font-size:16px;font-variant-numeric:tabular-nums}
+.colh{display:grid;grid-template-columns:1fr 64px 70px;gap:6px;font-size:11px;color:var(--mute);text-align:center}
+.colh span:first-child{text-align:left}
+.mini{border:0;background:var(--chip);border-radius:10px;padding:9px 12px;font-size:14px;font-weight:600}
+.mini.pri{background:var(--chip-on);color:var(--chip-on-ink)}
+.brow{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.eqb{border:0;background:var(--chip);border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;margin-left:4px}
+.eqb.on{background:var(--chip-on);color:var(--chip-on-ink)}
+.restbar{position:sticky;top:0;z-index:4;background:var(--protein);color:#fff;border-radius:14px;padding:10px 14px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.restbar button{background:rgba(255,255,255,.2);border:0;color:#fff;border-radius:10px;padding:6px 10px;font-weight:700}
+.tpl{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tpl button{border:0;background:var(--chip);border-radius:14px;padding:10px;text-align:left;font-size:13px;font-weight:650;line-height:1.25}
+.tpl button small{display:block;color:var(--mute);font-weight:500;font-size:11px;margin-top:2px}
+.pick{max-height:52vh;overflow:auto;margin:6px -4px 12px;padding:0 4px}
+.pick .gh{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);margin:10px 0 4px}
+.pick button{display:flex;justify-content:space-between;width:100%;border:0;background:none;padding:10px 4px;border-top:1px solid var(--line);font-size:15px;text-align:left}
+.pick button.on{color:var(--protein);font-weight:700}
+.pick button small{color:var(--mute);font-weight:500;font-size:12px}
 nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);
   display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:5}
-nav button{flex:1;background:none;border:0;padding:6px 0;color:var(--mute);font-size:10.5px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button{flex:1;min-width:0;background:none;border:0;padding:6px 0;color:var(--mute);font-size:10px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px}
 nav button .e{font-size:20px}
 nav button.on{color:var(--ink)}
 .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9;display:none}
@@ -216,6 +244,36 @@ nav button.on{color:var(--ink)}
   <div class="note" style="padding:0 4px 8px">Targets: NIH Dietary Reference Intakes for men 51–70 (Targets tab). Food values per USDA SR28 (Foods tab); blank values count as 0.</div>
 </section>
 
+<!-- ================= TRAIN ================= -->
+<section id="v-train" class="hide">
+  <div class="restbar hide" id="restBar"><span id="restTxt">Rest 1:30</span><span><button id="restAdd">+30s</button> <button id="restStop">Done</button></span></div>
+  <div class="card">
+    <div class="lbl">Workout <span id="trStatus">not started</span></div>
+    <div class="row">
+      <div class="stat"><div class="v" id="trTime">0:00</div><div class="k">session time</div></div>
+      <div class="stat"><div class="v" id="trSets">0</div><div class="k">sets · <span id="trVol">0</span> lb volume</div></div>
+    </div>
+    <div class="brow">
+      <button class="mini" data-add="1">+ Exercise</button>
+      <button class="mini" data-add="2">+ Superset</button>
+      <button class="mini" data-add="3">+ Tri-set</button>
+    </div>
+  </div>
+  <div id="blocks"></div>
+  <div class="card" id="tplCard">
+    <div class="lbl">Quick start <span>your moves, paired by research</span></div>
+    <div class="tpl" id="tpls"></div>
+    <div class="note">Opposing-muscle pairs (curl + kickback, press + row) keep your reps up; same-muscle pairs are harder and cut total volume.</div>
+  </div>
+  <button class="btn" id="trSave">Finish &amp; save workout</button>
+  <div style="height:10px"></div>
+  <div class="card">
+    <div class="lbl">Sets this week <span>target 10+ per muscle</span></div>
+    <div id="wkSets"></div>
+    <div class="note" id="wkSetsNote"></div>
+  </div>
+</section>
+
 <!-- ================= BODY ================= -->
 <section id="v-body" class="hide">
   <div class="card">
@@ -292,6 +350,7 @@ nav button.on{color:var(--ink)}
   <button data-v="today" class="on"><span class="e">◎</span>Today</button>
   <button data-v="log"><span class="e">＋</span>Log</button>
   <button data-v="nut"><span class="e">❖</span>Nutrients</button>
+  <button data-v="train"><span class="e">🏋︎</span>Train</button>
   <button data-v="body"><span class="e">⚖︎</span>Body</button>
   <button data-v="out"><span class="e">☾</span>Check-out</button>
 </nav>
@@ -304,6 +363,12 @@ nav button.on{color:var(--ink)}
   <div class="preview"><div><b id="pvP">0</b>protein g</div><div><b id="pvK">0</b>kcal</div><div><b id="pvF">0</b>fat g</div><div><b id="pvC">0</b>carbs g</div></div>
   <div class="row" style="margin-bottom:14px"><input class="f" type="time" id="shTime"></div>
   <button class="btn" id="shLog">Log it</button>
+</div>
+<div class="sheet-bg" id="pickBg"></div>
+<div class="sheet" id="pickSheet">
+  <h2 id="pickTitle">Pick exercises</h2><div class="sub" id="pickSub"></div>
+  <div class="pick" id="pickList"></div>
+  <button class="btn" id="pickOk">Add</button>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -501,7 +566,7 @@ function render(){
     el.innerHTML=`<div class="tm">${fmt12(e.time)}</div><div class="nm"><div>${chip?chip.e+' ':''}${esc(chip?chip.n:e.food)}</div><div>${esc(amtLabel(e))} · ${Math.round(m.kcal)} kcal</div></div><div class="pp">${Math.round(m.p)}g</div><button class="x" aria-label="Remove">✕</button>`;
     el.querySelector('.x').onclick=()=>removeEntry(e); list.appendChild(el); });
   $('#sameYest').classList.toggle('hide',!(d.prevEntries&&d.prevEntries.length));
-  renderWeek(); renderNut(); renderBody(); renderOut(); renderChips();
+  renderWeek(); renderNut(); renderBody(); renderOut(); renderChips(); renderTrain();
 }
 function amtLabel(e){ const c=CHIPS.find(c=>c.food===e.food&&c.unit===e.unit); if(c) return c.show(e.amount); const f=foodBy(e.food); return e.unit==='serving'?`${e.amount} × ${f?f.serving:'serving'}`:`${e.amount} ${e.unit}`; }
 
@@ -662,11 +727,147 @@ $('#saveOut').onclick=()=>{ const fields={...out,...mealBuckets()}; fields['Mons
   if(live()) enqueue({action:'saveCheckout',date:state.date,fields}); try{localStorage.removeItem('fuel.outDraft.'+state.date)}catch(e){}
   toast(live()?'Check-out saved':'Saved (demo)'); };
 
+
+/* ======================= TRAIN ======================= */
+// Library = your Strength Training "Exercises" tab + the moves you listed (new ones marked new:true).
+// mode: rw = reps x weight, r = reps (bodyweight; weight = added), carry = weight x distance, bag = bag weight x slams, count = sprints
+const LIB=[
+ {n:'Bench press, flat',g:'Chest',eq:['BB','DB'],m:'rw'},{n:'Bench press, incline',g:'Chest',eq:['BB','DB'],m:'rw'},{n:'Bench press, decline',g:'Chest',eq:['BB','DB'],m:'rw'},
+ {n:'Chest fly, flat',g:'Chest',eq:['DB'],m:'rw'},{n:'Chest fly, incline',g:'Chest',eq:['DB'],m:'rw'},{n:'Chest fly, decline',g:'Chest',eq:['DB'],m:'rw'},
+ {n:'Push-up',g:'Chest',eq:['BW'],m:'r',new:true},
+ {n:'Pull-up',g:'Back',eq:['BW'],m:'r'},{n:'Chin-up',g:'Back',eq:['BW'],m:'r'},{n:'Negative pull-up',g:'Back',eq:['BW'],m:'r'},
+ {n:'Bent-over barbell row',g:'Back',eq:['BB'],m:'rw'},{n:'Bent-over dumbbell row',g:'Back',eq:['DB'],m:'rw',new:true},{n:'Dumbbell row',g:'Back',eq:['DB'],m:'rw',hint:'one-arm, on the bench'},
+ {n:'Inverted row',g:'Back',eq:['BW'],m:'r',new:true,hint:'under the racked bar'},
+ {n:'Arnold press',g:'Shoulders',eq:['DB'],m:'rw'},{n:'Military press',g:'Shoulders',eq:['BB','DB'],m:'rw'},
+ {n:'Front raise',g:'Shoulders',eq:['DB'],m:'rw'},{n:'Lateral raise',g:'Shoulders',eq:['DB'],m:'rw'},{n:'Bent-over rear delt raise',g:'Shoulders',eq:['DB'],m:'rw'},
+ {n:'Handstand push-up',g:'Shoulders',eq:['BW'],m:'r',new:true,hint:'against a wall; pike push-up to build up'},
+ {n:'Curl',g:'Arms',eq:['DB','BB','EZ'],m:'rw'},{n:'Hammer curl',g:'Arms',eq:['DB'],m:'rw'},{n:'Isolation curl',g:'Arms',eq:['DB'],m:'rw'},
+ {n:'Triceps kickback',g:'Arms',eq:['DB'],m:'rw'},{n:'Overhead triceps extension',g:'Arms',eq:['DB'],m:'rw'},{n:'Skull crusher (nose breaker)',g:'Arms',eq:['EZ'],m:'rw'},{n:'Dips',g:'Arms',eq:['BW'],m:'r'},
+ {n:'Squat',g:'Legs',eq:['BB','DB'],m:'rw'},{n:'Hip hinge',g:'Legs',eq:['BB','DB'],m:'rw',hint:'deadlift pattern'},{n:'Alternating walking lunge',g:'Legs',eq:['DB'],m:'rw',hint:'reps = total steps'},
+ {n:'Calf raise',g:'Legs',eq:['DB'],m:'rw'},{n:'Leg extension',g:'Legs',eq:['Bench'],m:'rw'},{n:'Leg curl',g:'Legs',eq:['Bench'],m:'rw'},
+ {n:"Farmer's carry",g:'Carries',eq:['DB','Bag'],m:'carry',hint:'weight per hand'},
+ {n:'Bag get-up, carry & slam',g:'Conditioning',eq:['80','100'],m:'bag',hint:'your flow: get up, hinge, lift, carry, rotate, slam'},
+ {n:'Uphill sprint',g:'Conditioning',eq:['Hill'],m:'count'},
+];
+const GORDER=['Chest','Back','Shoulders','Arms','Legs','Carries','Conditioning'];
+const EQN={BB:'Barbell',DB:'Dumbbell',EZ:'EZ bar',BW:'Bodyweight',Bench:'Bench attachment',Bag:'Bags',Hill:'Hill','80':'80 lb bag','100':'100 lb bag'};
+const TPLS=[
+ {t:'Arms superset',d:'Curl + kickback',b:[['Curl','Triceps kickback']]},
+ {t:'Push / pull',d:'Bench + bent-over row',b:[['Bench press, flat','Bent-over barbell row']]},
+ {t:'Press / pull',d:'Arnold press + pull-up',b:[['Arnold press','Pull-up']]},
+ {t:'Delt tri-set',d:'Front + lateral + rear',b:[['Front raise','Lateral raise','Bent-over rear delt raise']]},
+ {t:'Leg tri-set',d:'Squat + hinge + calf',b:[['Squat','Hip hinge','Calf raise']]},
+ {t:'Finisher',d:'Farmer carry + bag flow',b:[["Farmer's carry",'Bag get-up, carry & slam']]},
+];
+const lib=n=>LIB.find(x=>x.n===n)||{n,g:'Other',eq:['DB'],m:'rw'};
+let tr=null, trTick=null, rest={end:0,t:null};
+function trKey(){ return 'fuel.train.'+state.date; }
+function trLoad(){ tr=LS.get(trKey(),null)||{date:state.date,start:null,blocks:[],saved:false}; }
+function trSaveLS(){ LS.set(trKey(),tr); }
+function lastFor(n){ const h=LS.get('fuel.last',{}); return h[n]; }
+function setLast(n,v){ const h=LS.get('fuel.last',{}); h[n]=v; LS.set('fuel.last',h); }
+function defVals(n){ const L=lastFor(n), x=lib(n);
+  if(L) return {...L};
+  return x.m==='carry'?{w:'',dist:40}:x.m==='bag'?{reps:5}:x.m==='count'?{reps:6}:x.m==='r'?{reps:8,w:''}:{reps:12,w:''}; }
+function addBlock(names){
+  if(!tr.start){ tr.start=Date.now(); }
+  const ex=names.map(n=>({n,eq:(lastFor(n)&&lastFor(n).eq)||lib(n).eq[0]}));
+  tr.blocks.push({ex,rounds:[names.map(n=>defVals(n))],done:0});
+  trSaveLS(); renderTrain(); startTick();
+}
+function blockLabel(b,i){ const L=String.fromCharCode(65+i); return b.ex.length===1?'Exercise '+L:b.ex.length===2?'Superset '+L:'Tri-set '+L; }
+function fields(m){ return m==='carry'?[['w','lb/hand'],['dist','yd']]:m==='bag'?[['reps','slams'],null]:m==='count'?[['reps','sprints'],['time','sec']]:m==='r'?[['reps','reps'],['w','+lb']]:[['reps','reps'],['w','lb']]; }
+function renderTrain(){
+  if(!tr||tr.date!==state.date) trLoad();
+  const box=$('#blocks'); box.innerHTML='';
+  tr.blocks.forEach((b,bi)=>{
+    const el=document.createElement('div'); el.className='blk';
+    let h=`<h3><span><span class="tag">${blockLabel(b,bi)}</span><br>${b.ex.map(e=>esc(e.n)).join(' + ')}</span><button class="x" data-del="${bi}" aria-label="Remove block">✕</button></h3>`;
+    const f0=fields(lib(b.ex[0].n).m), same=b.ex.every(e=>fields(lib(e.n).m).join()===f0.join());
+    h+=`<div class="colh" style="margin-top:8px"><span></span><span>${same&&f0[0]?f0[0][1]:''}</span><span>${same&&f0[1]?f0[1][1]:''}</span></div>`;
+    b.rounds.forEach((r,ri)=>{
+      h+=`<div class="rnd"><div class="rh"><span>Round ${ri+1}${ri<b.done?' ✓':''}</span>${ri===b.rounds.length-1&&b.rounds.length>1?`<button class="x" style="font-size:12px;padding:0" data-delr="${bi}">remove round</button>`:''}</div>`;
+      b.ex.forEach((e,ei)=>{ const x=lib(e.n), f=fields(x.m), v=r[ei]||{};
+        const eqBtns=x.eq.length>1?x.eq.map(q=>`<button class="eqb ${e.eq===q?'on':''}" data-eq="${bi},${ei},${q}">${q}</button>`).join(''):`<small style="display:inline;margin-left:4px">${EQN[x.eq[0]]||x.eq[0]}</small>`;
+        h+=`<div class="exl"><div class="nm">${esc(e.n.replace(/ \(nose breaker\)/,''))}${ri===0?`<small>${eqBtns}</small>`:''}</div>`;
+        f.forEach(ff=>{ if(!ff){h+='<span></span>';return;} h+=`<input type="number" inputmode="decimal" placeholder="${ff[1]}" value="${v[ff[0]]??''}" data-in="${bi},${ri},${ei},${ff[0]}" aria-label="${ff[1]}">`; });
+        h+='</div>'; });
+      h+='</div>'; });
+    h+=`<div class="brow"><button class="mini pri" data-round="${bi}">✓ Round done → rest</button><button class="mini" data-copy="${bi}">+ Round</button></div>`;
+    el.innerHTML=h; box.appendChild(el); });
+  // events
+  box.querySelectorAll('[data-in]').forEach(i=>i.oninput=()=>{ const [bi,ri,ei,k]=i.dataset.in.split(','); const b=tr.blocks[bi];
+    b.rounds[ri][ei]={...b.rounds[ri][ei],[k]:i.value===''?'':Number(i.value)}; trSaveLS(); trStats(); });
+  box.querySelectorAll('[data-eq]').forEach(btn=>btn.onclick=()=>{ const [bi,ei,q]=btn.dataset.eq.split(','); tr.blocks[bi].ex[ei].eq=q; trSaveLS(); renderTrain(); });
+  box.querySelectorAll('[data-del]').forEach(btn=>btn.onclick=()=>{ if(confirm('Remove this block?')){ tr.blocks.splice(+btn.dataset.del,1); trSaveLS(); renderTrain(); } });
+  box.querySelectorAll('[data-delr]').forEach(btn=>btn.onclick=()=>{ const b=tr.blocks[+btn.dataset.delr]; b.rounds.pop(); b.done=Math.min(b.done,b.rounds.length); trSaveLS(); renderTrain(); });
+  box.querySelectorAll('[data-copy]').forEach(btn=>btn.onclick=()=>{ const b=tr.blocks[+btn.dataset.copy]; b.rounds.push(b.rounds[b.rounds.length-1].map(v=>({...v}))); trSaveLS(); renderTrain(); });
+  box.querySelectorAll('[data-round]').forEach(btn=>btn.onclick=()=>{ const b=tr.blocks[+btn.dataset.round];
+    b.done=Math.max(b.done,b.rounds.length); b.rounds.push(b.rounds[b.rounds.length-1].map(v=>({...v}))); trSaveLS(); renderTrain(); startRest(b.ex.length>1?90:75); });
+  $('#tpls').innerHTML=TPLS.map((t,i)=>`<button data-tpl="${i}">${t.t}<small>${t.d}</small></button>`).join('');
+  $$('#tpls button').forEach(b=>b.onclick=()=>TPLS[+b.dataset.tpl].b.forEach(names=>addBlock(names)));
+  $('#trStatus').textContent=tr.saved?'saved ✓':tr.start?'in progress':'not started';
+  trStats(); renderWkSets();
+}
+// Only rounds marked done count; if none marked, all rounds count.
+function trSets(t){ const out=[]; (t||tr).blocks.forEach((b,bi)=>{ const n=b.done||b.rounds.length; const label=b.ex.length>1?(b.ex.length===2?'Superset ':'Tri-set ')+String.fromCharCode(65+bi)+': '+b.ex.map(e=>e.n).join(' + '):'';
+  for(let ri=0;ri<n;ri++) b.ex.forEach((e,ei)=>{ const v=b.rounds[ri][ei]||{}, x=lib(e.n);
+    const has = x.m==='carry'? (v.w||v.dist) : (v.reps||v.time);
+    if(!has) return;
+    const notes=[label, x.eq.length>1?EQN[e.eq]||e.eq:''].filter(Boolean).join(' · ');
+    out.push({exercise:e.n,group:x.g,set:ri+1,reps:x.m==='carry'?'':v.reps,weight:x.m==='bag'?Number(e.eq)||'':v.w,time:v.time||'',distance:v.dist||'',rest:b.ex.length>1?90:75,effort:'',notes}); }); }); return out; }
+function trStats(){ const s=trSets(); $('#trSets').textContent=s.length; $('#trVol').textContent=Math.round(s.reduce((a,x)=>a+(Number(x.reps)||0)*(Number(x.weight)||0),0)).toLocaleString(); }
+function startTick(){ clearInterval(trTick); trTick=setInterval(()=>{ if(!tr||!tr.start){ $('#trTime').textContent='0:00'; return; }
+  const end=tr.end||Date.now(); const m=Math.floor((end-tr.start)/60000); $('#trTime').textContent=Math.floor(m/60)+':'+String(m%60).padStart(2,'0'); },1000); }
+function startRest(sec){ rest.end=Date.now()+sec*1000; $('#restBar').classList.remove('hide'); clearInterval(rest.t);
+  rest.t=setInterval(()=>{ const left=Math.round((rest.end-Date.now())/1000); if(left<=0){ $('#restTxt').textContent='Go! Next round'; if(navigator.vibrate) navigator.vibrate(300); clearInterval(rest.t); setTimeout(()=>$('#restBar').classList.add('hide'),4000); return; }
+    $('#restTxt').textContent='Rest '+Math.floor(left/60)+':'+String(left%60).padStart(2,'0'); },250); }
+$('#restAdd').onclick=()=>{ rest.end+=30000; }; $('#restStop').onclick=()=>{ clearInterval(rest.t); $('#restBar').classList.add('hide'); };
+// picker
+let pick={need:1,sel:[]};
+function openPick(n){ pick={need:n,sel:[]}; $('#pickTitle').textContent=n===1?'Pick an exercise':n===2?'Pick 2 for the superset':'Pick 3 for the tri-set';
+  $('#pickSub').textContent='Tap in the order you do them.'; renderPick(); $('#pickSheet').classList.add('open'); $('#pickBg').style.display='block'; }
+function closePick(){ $('#pickSheet').classList.remove('open'); $('#pickBg').style.display='none'; }
+function renderPick(){ let h=''; GORDER.forEach(g=>{ h+=`<div class="gh">${g}</div>`; LIB.filter(x=>x.g===g).forEach(x=>{ const i=pick.sel.indexOf(x.n);
+    h+=`<button class="${i>=0?'on':''}" data-p="${esc(x.n)}"><span>${i>=0?(i+1)+'. ':''}${esc(x.n)}${x.hint?`<br><small>${esc(x.hint)}</small>`:''}</span><small>${x.eq.map(q=>q).join(' / ')}</small></button>`; }); });
+  $('#pickList').innerHTML=h; $('#pickOk').textContent=pick.sel.length?`Add ${pick.sel.length}/${pick.need}`:'Add';
+  $$('#pickList [data-p]').forEach(b=>b.onclick=()=>{ const n=b.dataset.p, i=pick.sel.indexOf(n); if(i>=0) pick.sel.splice(i,1); else if(pick.sel.length<pick.need) pick.sel.push(n);
+    if(pick.need===1&&pick.sel.length===1){ addBlock(pick.sel); closePick(); return; } renderPick(); }); }
+$$('[data-add]').forEach(b=>b.onclick=()=>openPick(+b.dataset.add));
+$('#pickBg').onclick=closePick;
+$('#pickOk').onclick=()=>{ if(!pick.sel.length) return; addBlock(pick.sel); closePick(); };
+// save
+function sessionType(sets){ const eqs=new Set(), gs=new Set(sets.map(s=>s.group)); tr.blocks.forEach(b=>b.ex.forEach(e=>eqs.add(e.eq)));
+  const cond=[...gs].every(g=>g==='Conditioning'||g==='Carries'); if(cond) return 'HIIT';
+  if(gs.has('Conditioning')||gs.has('Carries')) return 'Mixed'; return 'Weights'; }
+$('#trSave').onclick=()=>{ const sets=trSets(); if(!sets.length){ toast('Nothing to save yet'); return; }
+  const mins=tr.start?Math.max(1,Math.round(((tr.end||Date.now())-tr.start)/60000)):'';
+  const st=sessionType(sets);
+  if(!confirm(`Save ${sets.length} sets (${st}, ${mins} min)?`)) return;
+  tr.end=tr.end||Date.now(); tr.saved=true; trSaveLS();
+  tr.blocks.forEach(b=>b.ex.forEach((e,ei)=>{ const r=b.rounds[Math.max(0,(b.done||b.rounds.length)-1)][ei]; setLast(e.n,{...r,eq:e.eq}); }));
+  const hist=LS.get('fuel.trainHist',[]).filter(h=>h.date!==state.date); hist.push({date:state.date,sets:sets.map(s=>({g:s.group}))}); LS.set('fuel.trainHist',hist.slice(-60));
+  if(live()) enqueue({action:'addSets',date:state.date,sessionType:st,minutes:mins,sets:sets.map(({group,...x})=>x)});
+  // pre-fill check-out
+  const d=LS.get('fuel.outDraft.'+state.date,{}); const types=new Set((d['Exercise Types']||'').split(/,\s*/).filter(Boolean));
+  if(st!=='HIIT') types.add('Weights'); if(sets.some(s=>/Farmer/.test(s.exercise))) types.add('Farmer carries'); if(sets.some(s=>/Bag/.test(s.exercise))) types.add('Heavy bag');
+  d['Exercise Types']=[...types].join(', '); if(!d['Exercise Min']) d['Exercise Min']=String(mins); d['Sweat? (Y/N)']=d['Sweat? (Y/N)']||'Y'; LS.set('fuel.outDraft.'+state.date,d);
+  toast(live()?'Workout saved':'Saved (demo)'); renderTrain(); renderOut(); };
+function renderWkSets(){
+  const [y,m,dd]=state.date.split('-').map(Number); const dt=new Date(y,m-1,dd); const mon=shift(state.date,-((dt.getDay()+6)%7));
+  const hist=LS.get('fuel.trainHist',[]).filter(h=>h.date>=mon&&h.date<=shift(mon,6)&&h.date!==state.date);
+  const counts={}; hist.forEach(h=>h.sets.forEach(s=>counts[s.g]=(counts[s.g]||0)+1)); trSets().forEach(s=>counts[s.group]=(counts[s.group]||0)+1);
+  $('#wkSets').innerHTML=['Chest','Back','Shoulders','Arms','Legs'].map(g=>{ const c=counts[g]||0, p=c/10;
+    return `<div class="nu"><div class="t"><span>${g}</span><span><b>${c}</b> / 10 sets</span></div><div class="track"><div class="fill" style="width:${Math.min(100,p*100)}%;background:${lvlColor(p)}"></div></div></div>`; }).join('')
+    + `<div class="nu"><div class="t"><span>Carries + conditioning</span><span><b>${(counts.Carries||0)+(counts.Conditioning||0)}</b> sets</span></div></div>`;
+  $('#wkSetsNote').textContent='Week runs Mon–Sun. Each exercise in a superset round counts as one set for its muscle.'+(live()?'':' Demo counts only workouts saved on this phone.');
+}
+
 /* ======================= SETTINGS / NAV ======================= */
 $('#sUrl').value=cfg.url; $('#sTok').value=cfg.token;
 $('#saveSet').onclick=()=>{ cfg={url:$('#sUrl').value.trim(),token:$('#sTok').value.trim()}; LS.set('fuel.cfg',cfg); LS.set('fuel.bootAt',0);
   if(!live()){ Object.assign(state,{goals:DEMO_GOALS,foods:DEMO_FOODS,targets:DEMO_TARGETS}); } load(); toast(live()?'Connecting…':'Demo mode'); };
-function show(v){ ['today','log','nut','body','out'].forEach(x=>$('#v-'+x).classList.toggle('hide',x!==v)); $$('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+function show(v){ ['today','log','nut','train','body','out'].forEach(x=>$('#v-'+x).classList.toggle('hide',x!==v)); $$('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
   window.scrollTo(0,0); $('#queueNote').textContent=queue.length?queue.length+' change(s) waiting to save.':''; }
 $$('nav button').forEach(b=>b.onclick=()=>show(b.dataset.v));
 $('#goLog').onclick=()=>show('log');
@@ -675,7 +876,7 @@ $('#nextDay').onclick=()=>{ if(state.date<todayKey()){ state.date=shift(state.da
 window.addEventListener('online',flush);
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) flush(); });
 if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
-load(); flush();
+load(); flush(); startTick();
 </script>
 </body>
 </html>
