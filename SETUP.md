@@ -35,10 +35,10 @@ Until a row exists, its chip shows "not in sheet" and won't log.
 
 ## Step 3: Put the app on GitHub Pages (5 min, same as Sun Field)
 
-1. New repo `cupyblon/pillars-fuel` (private repos need a paid plan for Pages, so public is fine:
+1. Repo: `cupyblon/Scout` (already created and pushed; public is fine:
    no data or token lives in the code).
-2. Upload the 6 files in `app/`. Settings → Pages → Deploy from branch `main`, folder `/root`.
-3. On the iPhone: open `https://cupyblon.github.io/pillars-fuel/` in **Safari** → Share → **Add to Home Screen**.
+2. Settings → Pages → Deploy from branch `main`, folder `/root`.
+3. On the iPhone: open `https://cupyblon.github.io/Scout/` in **Safari** → Share → **Add to Home Screen**.
 4. Open Fuel from the home screen → Check-out tab → Settings → paste URL + token → **Save & connect**.
 
 ## What the app writes (and what it never touches)
