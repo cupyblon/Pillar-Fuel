@@ -144,6 +144,23 @@ textarea.f{min-height:64px;resize:vertical}
 .pick button{display:flex;justify-content:space-between;width:100%;border:0;background:none;padding:10px 4px;border-top:1px solid var(--line);font-size:15px;text-align:left}
 .pick button.on{color:var(--protein);font-weight:700}
 .pick button small{color:var(--mute);font-weight:500;font-size:12px}
+/* plan */
+.ptabs{display:flex;gap:6px;margin-bottom:8px;overflow-x:auto}
+.ptabs button{flex:1;border:0;background:var(--chip);border-radius:999px;padding:7px 4px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.ptabs button.on{background:var(--chip-on);color:var(--chip-on-ink)}
+.pl{list-style:none;margin:0;padding:0}
+.pl li{padding:9px 0;border-top:1px solid var(--line);font-size:14px;line-height:1.4}
+.pl li:first-child{border-top:0}
+.pl li b{font-weight:700}
+.pl li em{color:var(--mute);font-style:normal;font-size:12px}
+.pl li a,.call a{color:var(--carb)}
+.ph{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);margin:12px 0 2px}
+.lt{display:inline-block;font-size:11px;font-weight:800;border-radius:6px;padding:1px 6px;margin-right:2px;letter-spacing:.03em}
+.lt.dark{background:#2b2f4a;color:#c9d0ff} .lt.tw{background:#5a3d1e;color:#ffd7a0} .lt.day{background:#5a4b10;color:#ffe680}
+.call{background:var(--chip);border-radius:12px;padding:10px 12px;font-size:14px;margin:2px 0 8px}
+.datepick{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+header h1{cursor:pointer}
+header h1::after{content:" \25BE";font-size:12px;color:var(--mute)}
 nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);
   display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:5}
 nav button{flex:1;min-width:0;background:none;border:0;padding:6px 0;color:var(--mute);font-size:10px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px}
@@ -175,7 +192,7 @@ nav button.on{color:var(--ink)}
 <body>
 <header>
   <button class="ib" id="prevDay" aria-label="Previous day">‹</button>
-  <h1 id="dateTitle">Today</h1>
+  <h1 id="dateTitle">Today</h1><input type="date" class="datepick" id="datePick" aria-label="Pick a date">
   <button class="ib" id="nextDay" aria-label="Next day">›</button>
 </header>
 <div style="text-align:center;margin-top:-4px"><span class="sync" id="sync"></span></div>
@@ -200,6 +217,14 @@ nav button.on{color:var(--ink)}
       <div class="splitk" id="splitK"></div>
     </div>
     <div class="note" id="proteinNote"></div>
+  </div>
+
+  <div class="card" id="planCard">
+    <div class="lbl">Daily plan <span id="planMeta"></span></div>
+    <div class="ptabs" id="ptabs">
+      <button data-p="it" class="on">Itinerary</button><button data-p="sq">Squeeze-ins</button><button data-p="sw">Walks</button><button data-p="jr">Journal</button>
+    </div>
+    <div id="planBody"></div>
   </div>
 
   <div class="row">
@@ -507,6 +532,7 @@ function setSync(t,bad){ const el=$('#sync'); if(!live()){el.textContent='Demo m
   el.textContent=t||(queue.length?queue.length+' waiting to save':'Synced'); el.className='sync'+(bad?' bad':''); }
 async function load(){
   $('#demoBanner').classList.toggle('hide',live());
+  loadPlan();
   if(!live()){ state.day=demoDay(state.date); render(); setSync(); return; }
   const cached=LS.get('fuel.day.'+state.date,null); if(cached){state.day=cached; render();}
   setSync('Loading…');
@@ -901,6 +927,79 @@ function renderWkSets(){
     + `<div class="nu"><div class="t"><span>Carries + conditioning</span><span><b>${(counts.Carries||0)+(counts.Conditioning||0)}</b> sets</span></div></div>`;
   $('#wkSetsNote').textContent='Week runs Mon–Sun. Each exercise in a superset round counts as one set for its muscle.'+(live()?'':' Demo counts only workouts saved on this phone.');
 }
+
+
+/* ======================= DAILY PLAN ======================= */
+// Reads the "YYYY-MM-DD Daily Plan" Google Doc (Markdown export) and shows 4 sections.
+const DEMO_PLAN_MD="# Sample day (demo)\n\n## TODAY'S ITINERARY\n\n  - **All day:** Sample: a friend's birthday, send a text *(Relationships)*\n  - **4:45 AM:** Workout, 2–6 exercises x 3–6 sets, aim for a sweat; out the door by 5:50 *(Physical)*\n  - **5:50 AM:** Walk 1 to the train (dark start, wear something visible) *(Physical)*\n  - **6:05–6:25 AM:** Morning journal on the train *(Emotional)*\n  - **7:30–8:00 AM:** Walk 2 to work *(Physical)*\n  - **3:55–4:46 PM:** Walk 3 to the train *(Physical)*\n  - **Train home:** Text at least one person, then study OR a reconnect call *(Relationships / Intellectual)*\n  - **6:00–7:30 PM:** Family dinner, phones away *(Relationships)*\n  - **8:30–9:00 PM:** Evening check-out + meditate *(Emotional)*\n  - **9:15 PM:** Lights out (work night) *(Physical)*\n\n## SQUEEZE-INS (moving the needle toward upcoming deadlines)\n\n  - **Physical:** Sample nudge: no sweat logged this week yet. At 4:45: squats 3x10, rows 3x10, push-ups 3 sets, farmer carries 3 trips (about 25 min).\n  - **Relationships, due today:** Sample nudge: birthday text on the train in.\n  - **Emotional:** Sample nudge: bed was after 11 PM three nights; cap screens at 8:30.\n\n## MORNING JOURNAL\n\n**GRATEFUL (3)**\n\n  - 1\\) Sample: my family\n  - 2\\)\n  - 3\\)\n\n**TO BE** (love, support, build)\n\n  - Today I want to be: Sample: present at dinner\n  - Today I want to:\n\n## SUN & WEATHER (Brookfield)\n\n**SUN**\n\n  - Dawn: 5:54 AM · Sunrise: 6:24 AM\n  - Sunset: 4:45 PM · Dusk: 5:15 PM\n  - Day length: 10h 20m (-2m 25s vs yesterday)\n\n**WALKS** (skip if WFH)\n\n  - Walk 1, home to Congress Park (5:50 AM): DARK until 5:54 dawn, TWILIGHT after · sample weather\n  - Walk 2, Lake-Cook to work (7:30 AM): DAYLIGHT · sample weather\n  - Walk 3, work to Lake-Cook (3:55–4:21 PM start): DAYLIGHT, TWILIGHT after 4:45 sunset · sample weather\n  - Walk 4, Congress Park to home (5:52 PM): DARK the whole way · sample weather\n\n**WEATHER**\n\n  - Today: Sample only. The live app shows the real forecast from your Daily Plan doc.\n  - Walker call: Sample: umbrella for Walks 3 and 4.\n";
+let planTab='it', plan=null;
+function mdInline(t){
+  return esc(t.replace(/\\([!#()\-_.*>\\[\]])/g,'$1'))
+    .replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
+    .replace(/\*\(([^)]*)\)\*/g,'<em>($1)</em>')
+    .replace(/\*([^*]+)\*/g,'<em>$1</em>')
+    .replace(/\bDARK\b/g,'<span class="lt dark">DARK</span>')
+    .replace(/\bTWILIGHT\b/g,'<span class="lt tw">TWILIGHT</span>')
+    .replace(/\bDAYLIGHT\b/g,'<span class="lt day">DAYLIGHT</span>');
+}
+// "## " = section; a line that is only "**SUB** (note)" starts a subsection; "- " lines are items.
+function parsePlan(md){
+  const secs={}; let cur=null, sub='';
+  md.split(/\r?\n/).forEach(line=>{
+    const h=line.match(/^#{1,2}\s+(.*)/);
+    if(h){ cur=h[1].replace(/\\/g,'').toUpperCase(); secs[cur]=secs[cur]||[]; sub=''; return; }
+    if(!cur) return;
+    const t=line.trim(); if(!t||/^-{3,}$/.test(t)) return;
+    const li=t.match(/^[-*]\s+(.*)/);
+    if(li){ secs[cur].push({sub,t:li[1]}); return; }
+    const b=t.match(/^\*\*([^*]+)\*\*(.*)$/);
+    if(b && !/^\s*:/.test(b[2])){ sub=b[1].trim(); return; }
+    secs[cur].push({sub,t,plain:true});
+  });
+  const find=k=>{ const key=Object.keys(secs).find(x=>x.startsWith(k)); return key?secs[key]:[]; };
+  return {it:find("TODAY'S ITINERARY"),sq:find('SQUEEZE'),sw:find('SUN & WEATHER'),jr:find('MORNING JOURNAL')};
+}
+// Journal: keep only lines you actually wrote something in.
+function journalFilled(x){
+  if(x.plain) return false;
+  const raw=x.t.replace(/\\/g,'');
+  const rest=raw.replace(/^\d\)\s*/,'').replace(/^[A-Za-z][A-Za-z /']*:\s*/,'').trim();
+  return rest.length>0;
+}
+function renderPlan(){
+  const body=$('#planBody');
+  if(!plan){ body.innerHTML='<div class="empty">Loading…</div>'; $('#planMeta').textContent=''; return; }
+  if(!plan.found){ body.innerHTML='<div class="empty">No Daily Plan doc for this date.</div>'; $('#planMeta').textContent=''; return; }
+  const P=parsePlan(plan.md||'');
+  $('#planMeta').innerHTML= plan.url? `<a href="${esc(plan.url)}" target="_blank" rel="noopener" style="color:var(--carb)">open doc ↗</a>` : 'sample';
+  let items=(P[planTab]||[]).filter(x=>!x.plain || planTab!=='jr');
+  if(planTab==='jr') items=items.filter(journalFilled);
+  if(planTab==='sw') items=items.filter(x=>!/^\*?Weather:/.test(x.t) || !x.plain);
+  if(!items.length){ body.innerHTML=`<div class="empty">${planTab==='jr'?'Nothing written in the journal yet.':'Nothing in this section.'}</div>`; return; }
+  let h='', last=null, call='';
+  items.forEach(x=>{
+    if(/^Walker call:/i.test(x.t)){ call=x.t; return; }
+    if(x.sub!==last){ if(last!==null) h+='</ul>'; h+=(x.sub?`<div class="ph">${esc(x.sub)}</div>`:'')+'<ul class="pl">'; last=x.sub; }
+    h+=`<li>${mdInline(x.t)}</li>`;
+  });
+  h+='</ul>';
+  if(call) h=`<div class="call">${mdInline(call)}</div>`+h;
+  body.innerHTML=h;
+}
+$$('#ptabs button').forEach(b=>b.onclick=()=>{ planTab=b.dataset.p; $$('#ptabs button').forEach(x=>x.classList.toggle('on',x===b)); LS.set('fuel.planTab',planTab); renderPlan(); });
+async function loadPlan(){
+  const k='fuel.plan.'+state.date, want=state.date;
+  if(!live()){ plan={found:true,md:DEMO_PLAN_MD,url:''}; renderPlan(); return; }
+  plan=LS.get(k,null); renderPlan();
+  try{ const j=await api({action:'plan',date:want}); if(want!==state.date) return; plan=j; LS.set(k,j); renderPlan(); }
+  catch(err){ if(!plan){ $('#planBody').innerHTML='<div class="empty">Couldn\'t load the plan ('+esc(err.message)+').</div>'; } }
+}
+(function(){ const t=LS.get('fuel.planTab','it'); planTab=t; $$('#ptabs button').forEach(x=>x.classList.toggle('on',x.dataset.p===t)); })();
+// Tap the date at the top to jump to any day.
+$('#dateTitle').onclick=()=>{ const p=$('#datePick'); p.value=state.date; p.max=todayKey();
+  try{ if(p.showPicker) p.showPicker(); else { p.focus(); p.click(); } }catch(e){ p.focus(); p.click(); } };
+$('#datePick').onchange=e=>{ const v=e.target.value; if(v&&v<=todayKey()&&v!==state.date){ state.date=v; load(); } };
 
 /* ======================= SETTINGS / NAV ======================= */
 $('#sUrl').value=cfg.url; $('#sTok').value=cfg.token;

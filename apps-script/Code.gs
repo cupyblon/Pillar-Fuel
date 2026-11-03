@@ -13,6 +13,7 @@
  *    Columns E-AJ are ARRAYFORMULAs that do the math from the Foods tab.
  *  - Carnivore Nutrition > Daily Body: A, B, D-H (C = 7-day avg is a formula).
  *  - Pillars Tracker > Daily Log    : check-out columns, matched by header name.
+ *  READ ONLY: Daily folder "YYYY-MM-DD Daily Plan" docs (GET ?action=plan&date=...).
  *  - Strength Training > Workout Log: A-K, one row per set (L-N are formulas).
  *  - Strength Training > Sessions   : A-D, one row per workout day (E-G are formulas).
  *
@@ -22,6 +23,7 @@
 const NUTRITION_ID = '1mAkG128NSk-IzEJg-EZTNbNBz7YmmhnlBjJJAYMoyhA';
 const TRACKER_ID   = '1f2wlJqIKezVA1OHgX1OyHAwTmrXsCE019LNKDu0UvuA';
 const STRENGTH_ID  = '1LYztTug2l94R81f5B0mgak0F3pR9GkM-g1hyBuWETpo';
+const DAILY_FOLDER = '1lsYXiGZG0OpRZyfS1sb3sc1o-vq12Lu9';   // "YYYY-MM-DD Daily Plan" docs
 const TZ           = 'America/Chicago';
 const NOTE_COL     = 37; // Food Log column AK
 
@@ -53,6 +55,7 @@ function doGet(e) {
     const date = p.date || todayKey_();
     if ((p.action || 'bootstrap') === 'bootstrap') return bootstrap_(date);
     if (p.action === 'day') return day_(date);
+    if (p.action === 'plan') return readPlan_(date);
     throw new Error('Unknown action');
   });
 }
@@ -334,6 +337,26 @@ function readDeepDive_(ss) {
     if (!v[i][0]) break;                       // stop at the blank row above the legend
     out.push(v[i].map(String));
   }
+  return out;
+}
+
+// Daily Plan doc for a date, exported as Markdown (read only). Cached 5 min.
+function readPlan_(date) {
+  const cache = CacheService.getScriptCache();
+  const hit = cache.get('plan_' + date);
+  if (hit) return JSON.parse(hit);
+  const it = DriveApp.getFolderById(DAILY_FOLDER).getFilesByName(date + ' Daily Plan');
+  if (!it.hasNext()) return { date: date, found: false };
+  const f = it.next();
+  const get = function (mime) {
+    return UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/files/' + f.getId() + '/export?mimeType=' + encodeURIComponent(mime),
+      { headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() }, muteHttpExceptions: true });
+  };
+  let r = get('text/markdown');
+  if (r.getResponseCode() !== 200) r = get('text/plain');
+  const out = { date: date, found: true, url: f.getUrl(), updated: f.getLastUpdated().toISOString(),
+                md: r.getResponseCode() === 200 ? r.getContentText() : '' };
+  try { cache.put('plan_' + date, JSON.stringify(out), 300); } catch (e) {}   // skip cache if too big
   return out;
 }
 
