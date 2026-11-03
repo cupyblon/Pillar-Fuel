@@ -90,6 +90,7 @@ function bootstrap_(date) {
   return {
     goals: readGoals_(ss),
     foods: readFoods_(ss),
+    targets: readTargets_(ss),
     day: day_(date, ss)
   };
 }
@@ -104,8 +105,38 @@ function day_(date, ss) {
     prevEntries: entries.filter(function (x) { return x.date === prev; }),
     prevLastTime: lastTime_(entries.filter(function (x) { return x.date === prev; })),
     body: readBody_(ss, date),
-    checkout: readCheckout_(date)
+    checkout: readCheckout_(date),
+    history: readHistory_(ss, date)
   };
+}
+
+// Daily Totals (formula tab): last 30 days of kcal / protein / fat / carbs.
+function readHistory_(ss, date) {
+  const sh = ss.getSheetByName('Daily Totals');
+  const last = sh.getLastRow();
+  if (last < 2) return [];
+  const from = shiftKey_(date, -30);
+  const out = [];
+  sh.getRange(2, 1, last - 1, 9).getValues().forEach(function (r) {
+    if (!r[0]) return;
+    const k = key_(r[0]);
+    if (k < from || k > date) return;
+    out.push({ date: k, k: num_(r[1]), p: num_(r[2]), f: num_(r[3]), c: num_(r[8]) });
+  });
+  out.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+  return out;
+}
+
+// Targets tab: daily target per nutrient (blank = no target).
+function readTargets_(ss) {
+  const sh = ss.getSheetByName('Targets');
+  if (!sh) return {};
+  const out = {};
+  sh.getRange(2, 1, Math.max(sh.getLastRow() - 1, 1), 3).getValues().forEach(function (r) {
+    const i = NUTRIENT_HEADERS.indexOf(String(r[0]));
+    if (i >= 0 && r[2] !== '' && !isNaN(Number(r[2]))) out[NKEYS[i]] = Number(r[2]);
+  });
+  return out;
 }
 
 function readGoals_(ss) {
@@ -124,17 +155,30 @@ function readGoals_(ss) {
   return out;
 }
 
+// Foods tab columns E..AI = 31 nutrients per 100 g, in NKEYS order.
+const NKEYS = ['kcal','p','f','sat','mono','poly','chol','c','ca','fe','mg','ph','k','na','zn','cu','mn','se',
+  'vc','b1','b2','b3','b5','b6','fol','cho','b12','va','ve','vd','vk'];
+const NUTRIENT_HEADERS = ['Calories (kcal)','Protein (g)','Fat, total (g)','Saturated fat (g)','Monounsat. fat (g)',
+  'Polyunsat. fat (g)','Cholesterol (mg)','Carbs (g)','Calcium (mg)','Iron (mg)','Magnesium (mg)','Phosphorus (mg)',
+  'Potassium (mg)','Sodium (mg)','Zinc (mg)','Copper (mg)','Manganese (mg)','Selenium (mcg)','Vitamin C (mg)',
+  'B1 Thiamin (mg)','B2 Riboflavin (mg)','B3 Niacin (mg)','B5 Pantothenic (mg)','B6 (mg)','Folate (mcg DFE)',
+  'Choline (mg)','B12 (mcg)','Vitamin A (mcg RAE)','Vitamin E (mg)','Vitamin D (mcg)','Vitamin K (mcg)'];
+
 function readFoods_(ss) {
   const sh = ss.getSheetByName('Foods');
-  const v = sh.getRange(2, 1, sh.getLastRow() - 1, 18).getValues();
+  const v = sh.getRange(2, 1, sh.getLastRow() - 1, 35).getValues();
   const out = [];
   v.forEach(function (r) {
     if (!r[0] || r[3] === '' || isNaN(Number(r[3])) || Number(r[3]) <= 0) return;
+    const n = [];
+    let blanks = 0;
+    for (let j = 4; j < 35; j++) { if (r[j] === '') blanks++; n.push(num_(r[j])); }
     out.push({
       name: String(r[0]), cat: String(r[1]), serving: String(r[2]),
-      g: Number(r[3]),                      // grams in one serving
-      kcal: num_(r[4]), p: num_(r[5]), f: num_(r[6]), c: num_(r[11]),
-      na: num_(r[17])                       // all per 100 g
+      g: Number(r[3]),            // grams in one serving
+      n: n,                       // 31 nutrients per 100 g (NKEYS order)
+      sparse: blanks > 15,        // true = most micronutrients missing
+      kcal: n[0], p: n[1], f: n[2], c: n[7]
     });
   });
   return out;
