@@ -25,6 +25,7 @@ Backend deploys and repo housekeeping. The token and URL themselves are **never*
 | Nov 3 | v6.0 | First Code.gs + appsscript.json put in the repo root for documentation | – | – | `code.gs`, `appsscript.json` (816e6a7) |
 | Nov 3 | v6.1 | Code.gs pasted + deployed; app Settings updated on phone + PC | Yes | Yes | `code.gs` updated (ff79c8b) |
 | Nov 4 | v6.1.4 | Code.gs pasted; ran a function in the editor (made a new token); deployed; app Settings updated | Yes | Yes | `code.gs` updated (b560b5b) |
+| Nov 4 | v6.2 | Code.gs pasted; new deployment "v6.2 Fine Print" (Version 4, 5:22 PM); all 3 older deployments archived. App Settings need the new URL | Not stated | Yes | `code.gs` updated (944cc23) |
 
 **Where the files live:**
 - `apps-script/Code.gs` and `apps-script/appsscript.json` are the working copies. The tests run against these.
