@@ -45,15 +45,14 @@ Until a row exists, its chip shows "not in sheet" and won't log.
 
 | Sheet > tab | Writes | Never touches |
 |---|---|---|
-| Carnivore Nutrition > Food Log | A Date, B Food, C Amount, D Unit, AK Note (`@18:44 app`) | E–AJ (formulas) |
-| Carnivore Nutrition > Daily Body | A Date, B Weight, D Steps, E Water, F Exercise, G Note, H Training | C (7-day avg formula) |
+| Carnivore Nutrition > Food Log | A Date, B Food, C Amount, D Unit, AK Note (`@18:44 app #L…`) | E–AJ (formulas) |
+| Carnivore Nutrition > Daily Body | A Date, B Weight, D Steps, E Water, F Exercise, G Note | C (7-day avg formula), H (Training min formula from Strength) |
 | Pillars Tracker > Daily Log | Check-out columns by header name. Breakfast/Lunch/Dinner/Snacks only if empty | Grateful, To Be/Have/Feel, Top 3, Source Doc |
 
 Removing an entry clears that row's A–D + AK; it never deletes rows (row 2 holds the formulas).
 
-## Known conflict to fix before going live
+## Weekly Sync and the app (resolved)
 
-The **Pillars Weekly Sync** (Sunday 9:20 PM) also writes Daily Log, Food Log and Daily Body
-from your daily docs. If you log in the app *and* type meals in the daily doc, Sunday's sync can
-double-count food. Pick one: (a) app is the source for food/body, sync skips dates the app already
-filled, or (b) keep the daily doc for journaling only. I'd update the sync prompt for (a), with your OK.
+The **Pillars Weekly Sync** (Sunday) has a Fuel app exception: it never writes the Food Log, and
+it only fills *empty* cells in Daily Log rows the app created. So logging food in the app and
+journaling in the daily doc don't double-count.

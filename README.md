@@ -6,6 +6,7 @@ through a private Google Apps Script endpoint.
 
 - App: `index.html` (single file, installable from Safari via Add to Home Screen)
 - Backend: `apps-script/Code.gs` (deploy as a web app, protected by a token)
+- How it's all connected (shareable, with build-your-own steps): see `HOW-IT-WORKS.md`
 - Setup: see `SETUP.md`
 - Testing: see `TESTING.md` (automated tests in `tests/` + a 10-minute phone checklist)
 - Version history: see `CHANGELOG.md` (current: **v6.1.4**) · Live: https://cupyblon.github.io/Pillar-Fuel/
