@@ -9,12 +9,13 @@
  *
  * What it writes (and ONLY these cells — your formulas stay untouched):
  *  - Carnivore Nutrition > Food Log : columns A-D (Date, Food, Amount, Unit)
- *                                     + AK (Note, holds the time "@18:44 app").
+ *                                     + AK (Note: time + app id, "@18:44 app #L…" — the id stops retry duplicates).
  *    Columns E-AJ are ARRAYFORMULAs that do the math from the Foods tab.
  *  - Carnivore Nutrition > Daily Body: A, B, D-H (C = 7-day avg is a formula).
  *  - Pillars Tracker > Daily Log    : check-out columns, matched by header name.
  *  READ ONLY: Daily folder "YYYY-MM-DD Daily Plan" docs (GET ?action=plan&date=...).
- *  - Strength Training > Workout Log: A-K, one row per set (L-N are formulas).
+ *  - Strength Training > Workout Log: A-K, one row per set (L-N are formulas);
+ *                                     Notes end with "#W…" so re-saving a workout replaces it.
  *  - Strength Training > Sessions   : A-D, one row per workout day (E-G are formulas).
  *
  * Every request must carry your secret token (set it once with setToken()).
@@ -83,6 +84,7 @@ function doPost(e) {
 }
 
 function dispatch_(b) {
+  // One bad item returns its own error instead of failing the whole batch.
   try {
     if (b.action === 'addFood') return addFood_(b);
     if (b.action === 'removeFood') return removeFood_(b);
@@ -100,7 +102,6 @@ function bootstrap_(date) {
     goals: readGoals_(ss),
     foods: readFoods_(ss),
     targets: readTargets_(ss),
-    exercises: readExercises_(),
     deep: readDeepDive_(ss),
     day: day_(date, ss)
   };
@@ -209,8 +210,9 @@ function readEntries_(ss, keys) {
     if (keys.indexOf(k) < 0) continue;
     const note = String(notes[i][0] || '');
     const m = note.match(/@(\d{1,2}:\d{2})/);
+    const id = note.match(/#(L[a-z0-9]+)/i);
     out.push({ row: i + 2, date: k, food: String(v[i][1]), amount: Number(v[i][2]),
-               unit: String(v[i][3]), note: note, time: m ? m[1] : '' });
+               unit: String(v[i][3]), note: note, time: m ? m[1] : '', id: id ? id[1] : '' });
   }
   return out;
 }
@@ -253,26 +255,49 @@ function readCheckout_(date) {
 }
 
 /* ---------- writes ---------- */
+let FOOD_NAMES_ = null;   // memo for one request (a batch may add many foods)
+
+// Row of the Food Log entry the app tagged "#<id>" in the note (0 if none).
+// Only the last 500 rows are checked: a retry always lands near the bottom.
+function findFoodId_(sh, id) {
+  id = String(id || '').replace(/[^A-Za-z0-9]/g, '');
+  if (!id) return 0;
+  const last = lastDataRow_(sh);
+  if (last < 2) return 0;
+  const from = Math.max(2, last - 499);
+  const notes = sh.getRange(from, NOTE_COL, last - from + 1, 1).getValues();
+  const re = new RegExp('#' + id + '(?![A-Za-z0-9])');
+  for (let i = notes.length - 1; i >= 0; i--) if (re.test(String(notes[i][0] || ''))) return from + i;
+  return 0;
+}
+
 function addFood_(b) {
   const ss = SpreadsheetApp.openById(NUTRITION_ID);
-  const foods = readFoods_(ss).map(function (f) { return f.name; });
-  if (foods.indexOf(b.food) < 0) throw new Error('Food not in Foods tab: ' + b.food);
+  const sh = ss.getSheetByName('Food Log');
+  // Retry safety: if this exact entry (same app id) is already in the log, don't add it again.
+  const dup = findFoodId_(sh, b.id || b._local);
+  if (dup) return { ok: true, row: dup, duplicate: true };
+  if (!FOOD_NAMES_) FOOD_NAMES_ = readFoods_(ss).map(function (f) { return f.name; });
+  if (FOOD_NAMES_.indexOf(b.food) < 0) throw new Error('Food not in Foods tab: ' + b.food);
   const unit = ['g', 'oz', 'lb', 'serving'].indexOf(b.unit) >= 0 ? b.unit : 'serving';
   const amt = Number(b.amount);
   if (!(amt > 0)) throw new Error('Amount must be > 0');
-  const sh = ss.getSheetByName('Food Log');
   let row = lastDataRow_(sh) + 1;
   if (row > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), 200);
   sh.getRange(row, 1, 1, 4).setValues([[dateObj_(b.date), b.food, amt, unit]]);
   sh.getRange(row, 1).setNumberFormat('yyyy-mm-dd');
-  const note = '@' + (b.time || nowTime_()) + ' app' + (b.note ? ' · ' + b.note : '');
+  const id = b.id || b._local;
+  const note = '@' + (b.time || nowTime_()) + ' app' + (id ? ' #' + id : '') + (b.note ? ' · ' + b.note : '');
   sh.getRange(row, NOTE_COL).setValue(note);
   return { ok: true, row: row };
 }
 
 function removeFood_(b) {
   const sh = SpreadsheetApp.openById(NUTRITION_ID).getSheetByName('Food Log');
-  const r = Number(b.row);
+  // Prefer the app id (works even if the phone never learned the row number).
+  let r = Number(b.row) || 0;
+  const byId = findFoodId_(sh, b.id);
+  if (b.id) { if (!byId) return { ok: true, missing: true }; r = byId; }
   if (r < 2) throw new Error('Bad row');
   const v = sh.getRange(r, 1, 1, 2).getValues()[0];
   // Safety: only clear the row if it is still the same food on the same date.
@@ -287,17 +312,15 @@ function saveBody_(b) {
   const sh = SpreadsheetApp.openById(NUTRITION_ID).getSheetByName('Daily Body');
   let r = findDateRow_(sh, b.date);
   if (!r) {
-    r = Math.max(sh.getLastRow(), 1) + 1;
     // C column is a BYROW formula in C2 — find the real last row by column A.
-    const a = sh.getRange('A:A').getValues();
-    let last = 1;
-    for (let i = a.length - 1; i >= 1; i--) if (a[i][0] !== '') { last = i + 1; break; }
-    r = last + 1;
+    r = lastDataRow_(sh, 1) + 1;
     sh.getRange(r, 1).setValue(dateObj_(b.date)).setNumberFormat('yyyy-mm-dd');
   }
+  // Field not sent = leave it alone. Sent as '' = you cleared it, so clear the cell.
   const set = function (col, val) {
-    if (val === undefined || val === null || val === '') return;
-    sh.getRange(r, col).setValue(val);
+    if (val === undefined || val === null) return;
+    if (val === '') sh.getRange(r, col).clearContent();
+    else sh.getRange(r, col).setValue(val);
   };
   set(2, b.weight); set(4, b.steps); set(5, b.water);
   set(6, b.exercise); set(7, b.note); set(8, b.training);
@@ -346,8 +369,13 @@ function readPlan_(date) {
   const hit = cache.get('plan_' + date);
   if (hit) return JSON.parse(hit);
   const it = DriveApp.getFolderById(DAILY_FOLDER).getFilesByName(date + ' Daily Plan');
-  if (!it.hasNext()) return { date: date, found: false };
-  const f = it.next();
+  let f = null;   // skip anything in the trash; if there are copies, use the newest
+  while (it.hasNext()) {
+    const x = it.next();
+    if (x.isTrashed()) continue;
+    if (!f || x.getLastUpdated() > f.getLastUpdated()) f = x;
+  }
+  if (!f) return { date: date, found: false };
   const get = function (mime) {
     return UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/files/' + f.getId() + '/export?mimeType=' + encodeURIComponent(mime),
       { headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() }, muteHttpExceptions: true });
@@ -368,33 +396,60 @@ function readExercises_() {
           .map(function (r) { return { name: String(r[0]), group: String(r[1]), equip: String(r[2]) }; });
 }
 
-// b.sessionType, b.minutes, b.sets = [{exercise, set, reps, weight, time, distance, rest, effort, notes}]
+// b.session (app id), b.sessionType, b.minutes,
+// b.sets = [{exercise, set, reps, weight, time, distance, rest, effort, notes}]
+// Saving the same session again REPLACES its rows (no duplicates).
 function addSets_(b) {
   const ss = SpreadsheetApp.openById(STRENGTH_ID);
   const log = ss.getSheetByName('Workout Log');
   const sets = (b.sets || []).filter(function (x) { return x.exercise; });
   if (!sets.length) throw new Error('No sets');
+  const sid = String(b.session || '').replace(/[^A-Za-z0-9]/g, '');
+  const tag = sid ? '#' + sid : '';
   const blank = function (x) { return (x === undefined || x === null) ? '' : x; };
   const rows = sets.map(function (x) {
+    const notes = [blank(x.notes), tag].filter(String).join(' ');
     return [dateObj_(b.date), b.sessionType || 'Weights', x.exercise, blank(x.set), blank(x.reps), blank(x.weight),
-            blank(x.time), blank(x.distance), blank(x.rest), blank(x.effort), blank(x.notes)];
+            blank(x.time), blank(x.distance), blank(x.rest), blank(x.effort), notes];
   });
-  let r = lastDataRow_(log, 1) + 1;
-  if (r + rows.length > log.getMaxRows()) log.insertRowsAfter(log.getMaxRows(), rows.length + 200);
-  log.getRange(r, 1, rows.length, 11).setValues(rows);           // A-K only
-  log.getRange(r, 1, rows.length, 1).setNumberFormat('yyyy-mm-dd');
-  // One Sessions row per date (A-D only); add minutes if the day already has one.
+  // Rows this session already wrote (found by the tag in Notes, column K).
+  const last = lastDataRow_(log, 1);
+  const old = [];
+  if (tag && last >= 2) {
+    log.getRange(2, 11, last - 1, 1).getValues().forEach(function (v, i) {
+      if (String(v[0]).indexOf(tag) >= 0) old.push(i + 2);
+    });
+  }
+  // Overwrite the old rows first, append whatever is left, clear old rows not needed.
+  let i = 0;
+  old.forEach(function (r) {
+    if (i < rows.length) { log.getRange(r, 1, 1, 11).setValues([rows[i]]); log.getRange(r, 1).setNumberFormat('yyyy-mm-dd'); i++; }
+    else log.getRange(r, 1, 1, 11).clearContent();
+  });
+  const rest = rows.slice(i);
+  let r = last + 1;
+  if (rest.length) {
+    if (r + rest.length > log.getMaxRows()) log.insertRowsAfter(log.getMaxRows(), rest.length + 200);
+    log.getRange(r, 1, rest.length, 11).setValues(rest);           // A-K only
+    log.getRange(r, 1, rest.length, 1).setNumberFormat('yyyy-mm-dd');
+  }
+  // One Sessions row per date (A-D only). Minutes: add this session's change only.
+  const props = PropertiesService.getScriptProperties();
+  const mkey = sid ? 'min_' + sid : '';
+  const before = mkey ? Number(props.getProperty(mkey)) || 0 : 0;
+  const mins = Number(b.minutes) || 0;
   const ses = ss.getSheetByName('Sessions');
   let sr = findDateRow_(ses, b.date);
   if (!sr) {
     sr = lastDataRow_(ses, 1) + 1;
-    ses.getRange(sr, 1, 1, 4).setValues([[dateObj_(b.date), b.sessionType || 'Weights', Number(b.minutes) || '', 'Fuel app']]);
+    ses.getRange(sr, 1, 1, 4).setValues([[dateObj_(b.date), b.sessionType || 'Weights', mins || '', 'Fuel app']]);
     ses.getRange(sr, 1).setNumberFormat('yyyy-mm-dd');
-  } else if (Number(b.minutes)) {
+  } else if (mins !== before) {
     const c = ses.getRange(sr, 3);
-    c.setValue((Number(c.getValue()) || 0) + Number(b.minutes));
+    c.setValue(Math.max(0, (Number(c.getValue()) || 0) - before + mins));
   }
-  return { ok: true, firstRow: r, rows: rows.length };
+  if (mkey) props.setProperty(mkey, String(mins));
+  return { ok: true, replaced: old.length, rows: rows.length };
 }
 
 /* ---------- helpers ---------- */

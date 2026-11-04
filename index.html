@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Fuel">
-<meta name="theme-color" content="#14110f">
+<meta name="theme-color" content="#121725">
 <meta name="color-scheme" content="dark light">
 <!-- Brave/Dark Reader night modes: this page already has its own dark theme, so don't recolor it -->
 <meta name="darkreader-lock">
@@ -42,8 +42,7 @@ header h1{font-size:17px;margin:0;font-weight:650;min-width:120px;text-align:cen
 main{padding:0 16px;max-width:560px;margin:0 auto}
 .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin:10px 0}
 .lbl{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);font-weight:600;margin:0 0 10px;display:flex;justify-content:space-between;gap:10px}
-.lbl span{text-align:right}
-.lbl span{text-transform:none;letter-spacing:0;font-weight:500}
+.lbl span{text-align:right;text-transform:none;letter-spacing:0;font-weight:500}
 /* hero */
 .hero{display:flex;gap:14px;align-items:center}
 .rings{position:relative;width:150px;height:150px;flex:none}
@@ -138,6 +137,8 @@ textarea.f{min-height:64px;resize:vertical}
 .eqb{border:0;background:var(--chip);border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;margin-left:4px}
 .eqb.on{background:var(--chip-on);color:var(--chip-on-ink)}
 .restbar{position:sticky;top:0;z-index:4;background:var(--protein);color:#fff;border-radius:14px;padding:10px 14px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.restbar.go{animation:rflash .45s 6 alternate}
+@keyframes rflash{to{background:var(--ok);color:#000}}
 .restbar button{background:rgba(255,255,255,.2);border:0;color:#fff;border-radius:10px;padding:6px 10px;font-weight:700}
 .tpl{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .tpl button{border:0;background:var(--chip);border-radius:14px;padding:10px;text-align:left;font-size:13px;font-weight:650;line-height:1.25}
@@ -161,7 +162,10 @@ textarea.f{min-height:64px;resize:vertical}
 .lt{display:inline-block;font-size:11px;font-weight:800;border-radius:6px;padding:1px 6px;margin-right:2px;letter-spacing:.03em}
 .lt.dark{background:#2b2f4a;color:#c9d0ff} .lt.tw{background:#5a3d1e;color:#ffd7a0} .lt.day{background:#5a4b10;color:#ffe680}
 .call{background:var(--chip);border-radius:12px;padding:10px 12px;font-size:14px;margin:2px 0 8px}
-.datepick{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.dwrap{position:relative;display:inline-block}
+.datepick{position:absolute;inset:0;width:100%;height:100%;opacity:.011;color:transparent;background:transparent;border:0;padding:0;margin:0;cursor:pointer;-webkit-appearance:none;appearance:none;font-size:16px}
+.datepick::-webkit-calendar-picker-indicator{opacity:0}
+html.dash header .dwrap{display:none}
 header h1{cursor:pointer}
 header h1::after{content:" \25BE";font-size:12px;color:var(--mute)}
 nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);
@@ -309,7 +313,7 @@ html.dash:not(.desk) main{max-width:640px}
 <body>
 <header>
   <button class="ib" id="prevDay" aria-label="Previous day">‹</button>
-  <h1 id="dateTitle">Today</h1><input type="date" class="datepick" id="datePick" aria-label="Pick a date">
+  <span class="dwrap"><h1 id="dateTitle">Today</h1><input type="date" class="datepick" id="datePick" aria-label="Pick a date"></span>
   <button class="ib" id="nextDay" aria-label="Next day">›</button>
   <div class="brand"><b>Pillars Fuel</b><span id="dSub"></span></div>
   <div class="hbtns">
@@ -493,6 +497,7 @@ html.dash:not(.desk) main{max-width:640px}
     <div class="fld"><label>Script URL</label><input class="f" id="sUrl" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off"></div>
     <div class="fld"><label>Token</label><input class="f" id="sTok" autocomplete="off"></div>
     <button class="btn sec" id="saveSet">Save &amp; connect</button>
+    <button class="btn sec" id="refreshData" style="margin-top:8px">Refresh foods, targets &amp; goals</button>
     <div class="note" id="queueNote"></div>
   </div>
 </section>
@@ -644,20 +649,34 @@ function nutr(e){ const f=foodBy(e.food), g=grams(e)/100, o={}; NKEYS.forEach((k
 function tot(list){ const t={}; NKEYS.forEach(k=>t[k]=0); list.forEach(e=>{const m=nutr(e); NKEYS.forEach(k=>t[k]+=m[k]);}); return t; }
 function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('on'); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove('on'),1600); }
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-function cssv(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
 
 /* ======================= NETWORK ======================= */
 async function api(params){ const r=await fetch(cfg.url+'?'+new URLSearchParams({...params,token:cfg.token}),{redirect:'follow'}); const j=await r.json(); if(j.error) throw new Error(j.error); return j; }
 async function post(body){ const r=await fetch(cfg.url,{method:'POST',redirect:'follow',body:JSON.stringify({...body,token:cfg.token})}); const j=await r.json(); if(j.error) throw new Error(j.error); return j; }
 function enqueue(it){ queue.push(it); LS.set('fuel.queue',queue); flush(); }
-let flushing=false;
+// Sends up to 20 waiting changes in ONE request. If the server rejects one item
+// (bad food name, row changed) that item is dropped and the rest keep going.
+// Network, token and "busy" errors keep everything queued for the next try.
+let flushing=false, inflight=new Set();
+const KEEP_ERR=/token|lock|timed? ?out|too many|service|busy|exceeded|unavailable|no reply/i;
+function qLabel(it){ return it.action==='addFood'?it.food:it.action==='removeFood'?'remove '+it.food:it.action==='addSets'?'workout':it.action==='saveBody'?'body':it.action==='saveCheckout'?'check-out':it.action; }
 async function flush(){
   if(!live()||flushing||!queue.length){ setSync(); return; }
-  flushing=true; setSync('Saving…');
-  try{ while(queue.length){ const it=queue[0]; const res=await post(it);
-      if(it.action==='addFood'&&it._local&&state.day){ const e=state.day.entries.find(x=>x._local===it._local); if(e){e.row=res.row; delete e._local;} }
-      queue.shift(); LS.set('fuel.queue',queue); } setSync('Saved'); }
-  catch(err){ setSync(navigator.onLine?('Error: '+err.message):'Offline · '+queue.length+' waiting',true); }
+  flushing=true; setSync('Saving…'); const skipped=[];
+  try{ while(queue.length){ const items=queue.slice(0,20); items.forEach(it=>{ inflight.add(it); it.sent=1; }); LS.set('fuel.queue',queue);
+      let res; try{ res=(await post({action:'batch',items})).results||[]; } finally{ inflight.clear(); }
+      let stop='';
+      for(let i=0;i<items.length;i++){ const it=items[i], r=res[i]||{error:'No reply'};
+        if(r.error&&KEEP_ERR.test(r.error)){ stop=r.error; break; }
+        if(r.error){ skipped.push(qLabel(it)+': '+r.error);
+          if(it.action==='addFood'&&state.day&&it.date===state.date) state.day.entries=state.day.entries.filter(x=>x._local!==it._local); }
+        else if(it.action==='addFood'&&state.day){ const e=state.day.entries.find(x=>x._local===it._local); if(e){ e.row=r.row; e.id=it._local; delete e._local; } }
+        const k=queue.indexOf(it); if(k>=0) queue.splice(k,1); }
+      LS.set('fuel.queue',queue); if(state.day) LS.set('fuel.day.'+state.date,state.day);
+      if(stop) throw new Error(stop); }
+    if(skipped.length){ LS.set('fuel.skipped',skipped.slice(-10)); setSync('Skipped '+skipped.length+': '+skipped[0],true); toast('Not saved: '+skipped[0]); render(); }
+    else setSync('Saved'); }
+  catch(err){ setSync(navigator.onLine?('Error: '+err.message+' · '+queue.length+' waiting'):'Offline · '+queue.length+' waiting',true); }
   flushing=false;
 }
 function setSync(t,bad){ setTimeout(()=>{ if(typeof renderGlance==='function'&&state.T) renderGlance(); },0); const el=$('#sync'); if(!live()){el.textContent='Demo mode';el.className='sync';return;}
@@ -669,12 +688,12 @@ async function load(){
   const cached=LS.get('fuel.day.'+state.date,null); if(cached){state.day=cached; render();}
   setSync('Loading…');
   try{
-    const needBoot=!LS.get('fuel.bootAt',0)||Date.now()-LS.get('fuel.bootAt',0)>6*3600e3;
+    const needBoot=!LS.get('fuel.bootAt',0)||Date.now()-LS.get('fuel.bootAt',0)>3600e3;
     if(needBoot){ const j=await api({action:'bootstrap',date:state.date});
       Object.assign(state,{goals:j.goals,foods:j.foods,targets:j.targets||DEMO_TARGETS,deep:j.deep||[],day:j.day}); LS.set('fuel.deep',state.deep);
       LS.set('fuel.goals',j.goals); LS.set('fuel.foods',j.foods); LS.set('fuel.targets',state.targets); LS.set('fuel.bootAt',Date.now()); }
     else state.day=await api({action:'day',date:state.date});
-    queue.filter(q=>q.action==='addFood'&&q.date===state.date).forEach(q=>{ if(!state.day.entries.some(e=>e._local===q._local)) state.day.entries.push({food:q.food,amount:q.amount,unit:q.unit,time:q.time,date:q.date,_local:q._local}); });
+    queue.filter(q=>q.action==='addFood'&&q.date===state.date).forEach(q=>{ if(!state.day.entries.some(e=>e._local===q._local||e.id===q._local)) state.day.entries.push({food:q.food,amount:q.amount,unit:q.unit,time:q.time,date:q.date,_local:q._local}); });
     LS.set('fuel.day.'+state.date,state.day); state.waterAdd=0; render(); setSync();
   }catch(err){ setSync('Error: '+err.message,true); if(!state.day){state.day={date:state.date,entries:[],body:{},checkout:{},history:[]}; render();} }
 }
@@ -686,6 +705,7 @@ function ring(r,w,pct,color){ const C=2*Math.PI*r, p=Math.max(0,Math.min(1,pct))
 function render(){
   const d=state.day,g=state.goals; if(!d) return;
   const t=todayKey();
+  { const p=$('#datePick'); p.value=state.date; p.max=t; }
   $('#dateTitle').textContent=state.date===t?'Today':state.date===shift(t,-1)?'Yesterday':new Date(state.date+'T12:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
   $('#nextDay').style.visibility=state.date>=t?'hidden':'visible';
   const T=tot(d.entries); state.T=T;
@@ -762,7 +782,7 @@ $$('#wkTabs button').forEach(b=>b.onclick=()=>{ state.wk=b.dataset.m; $$('#wkTab
 function lvlColor(p){ return p>=1?'var(--ok)':p>=0.5?'var(--mid)':'var(--warn)'; }
 function renderNut(){
   const T=state.T, tg=state.targets||DEMO_TARGETS, d=state.day;
-  const sources=k=>{ const i=NKEYS.indexOf(k); return d.entries.map(e=>({e,v:nutr(e)[k]})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,3)
+  const sources=k=>{ return d.entries.map(e=>({e,v:nutr(e)[k]})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,3)
       .map(x=>{const c=CHIPS.find(c=>c.food===x.e.food); return `${c?c.n:x.e.food} ${nice(x.v)}`;}).join(' · ') || 'nothing logged has this'; };
   const row=k=>{ const [nm,unit,why]=NINFO[k], v=T[k], g=tg[k];
     const p=g? v/g : null;
@@ -803,9 +823,9 @@ function deepMap(){ const rows=(live()&&state.deep&&state.deep.length)?state.dee
   return m; }
 function renderDeep(){
   const d=state.day, M=deepMap(); const tot={}, src={}; DKEYS.forEach(([k])=>{tot[k]=0;src[k]=[];});
-  let covered=0; const missing=new Set();
+  const missing=new Set();
   d.entries.forEach(e=>{ const r=M[e.food], g=grams(e)/100; const f=foodBy(e.food);
-    if(!r){ if(f&&!/Drinks|Other/.test(f.cat||'')&&!/coffee|monster|pepper|salt/i.test(e.food)) missing.add(e.food); return; } covered++;
+    if(!r){ if(f&&!/Drinks|Other/.test(f.cat||'')&&!/coffee|monster|pepper|salt/i.test(e.food)) missing.add(e.food); return; }
     DKEYS.forEach(([k])=>{ if(r[k]!=null&&r[k]>0){ const v=r[k]*g; tot[k]+=v; src[k].push([e.food,v]); } }); });
   const nm=f=>{const c=CHIPS.find(c=>c.food===f); return c?c.n:f;};
   $('#nDeep').innerHTML = !d.entries.length? '<div class="empty">Log food to see these.</div>' : DKEYS.map(([k,label,unit,why])=>{
@@ -838,8 +858,10 @@ function addEntry(food,amount,unit,time){ const id='L'+Date.now()+Math.random().
   if(live()) enqueue({action:'addFood',date:state.date,food,amount,unit,time,_local:id}); }
 function removeEntry(e){ if(!confirm('Remove '+(CHIPS.find(c=>c.food===e.food)||{n:e.food}).n+'?')) return;
   state.day.entries=state.day.entries.filter(x=>x!==e); LS.set('fuel.day.'+state.date,state.day); render(); if(!live()) return;
-  if(e._local){ queue=queue.filter(q=>q._local!==e._local); LS.set('fuel.queue',queue); setSync(); return; }
-  enqueue({action:'removeFood',row:e.row,food:e.food,date:e.date}); }
+  // Never sent yet -> just cancel it. Sent at least once (reply may have been lost) -> also remove it on the server by id.
+  const waiting=e._local&&queue.find(q=>q._local===e._local);
+  if(waiting&&!inflight.has(waiting)){ queue=queue.filter(q=>q!==waiting); LS.set('fuel.queue',queue); if(!waiting.sent){ setSync(); return; } }
+  const id=e._local||e.id; enqueue({action:'removeFood',row:e.row,id:id||undefined,food:e.food,date:e.date}); }
 $('#sameYest').onclick=()=>{ const p=state.day.prevEntries||[]; if(!p.length) return; if(!confirm('Log '+p.length+' items from yesterday at the same times?')) return;
   p.forEach(e=>addEntry(e.food,e.amount,e.unit,e.time||nowHM())); toast('Copied '+p.length+' items'); };
 $('#q').oninput=()=>{ const q=$('#q').value.trim().toLowerCase(), box=$('#results'); box.innerHTML=''; if(q.length<2) return;
@@ -886,32 +908,37 @@ function renderBody(){
   $('#wChart').innerHTML=s;
   $('#wRange').textContent=hist.length?`${hist.length} weigh-in${hist.length>1?'s':''} · solid = scale, dashed = 7-day avg`:'';
 }
-$('#saveBody').onclick=()=>{ const v=id=>{const x=$(id).value.trim(); return x===''?'':Number(x);};
-  const body={action:'saveBody',date:state.date,weight:v('#bWeight'),steps:v('#bSteps'),water:v('#bWater'),exercise:v('#bEx'),training:v('#bTr'),note:$('#bNote').value.trim()};
-  const b=state.day.body=state.day.body||{}; Object.assign(b,{weight:body.weight,steps:body.steps,water:body.water,exercise:body.exercise,training:body.training,note:body.note});
-  if(body.weight!==''){ b.hist=(b.hist||[]).filter(h=>h.date!==state.date); b.hist.push({date:state.date,w:body.weight}); b.hist.sort((a,c)=>a.date<c.date?-1:1); }
-  state.waterAdd=0; LS.set('fuel.day.'+state.date,state.day); render(); if(live()) enqueue(body); toast('Body saved'); };
+$('#saveBody').onclick=()=>{ clearTimeout(window._wt);
+  const b=state.day.body=state.day.body||{}; const norm=x=>(x===undefined||x===null)?'':String(x);
+  const F={weight:'#bWeight',steps:'#bSteps',water:'#bWater',exercise:'#bEx',training:'#bTr',note:'#bNote'};
+  const body={action:'saveBody',date:state.date}; let n=0;
+  for(const k in F){ const x=$(F[k]).value.trim(); const val=(k==='note'||x==='')?x:Number(x);
+    if(norm(val)!==norm(b[k])){ body[k]=val; b[k]=val; n++; } }
+  state.waterAdd=0;
+  if(!n){ render(); toast('No changes'); return; }
+  if('weight' in body){ b.hist=(b.hist||[]).filter(h=>h.date!==state.date); if(body.weight!=='') b.hist.push({date:state.date,w:body.weight}); b.hist.sort((a,c)=>a.date<c.date?-1:1); }
+  LS.set('fuel.day.'+state.date,state.day); render(); if(live()) enqueue(body); toast('Body saved'); };
 $('#waterStat').onclick=()=>{ state.waterAdd+=16; render(); clearTimeout(window._wt);
   window._wt=setTimeout(()=>{ const w=(Number(state.day.body&&state.day.body.water)||0)+state.waterAdd; (state.day.body=state.day.body||{}).water=w; state.waterAdd=0;
     LS.set('fuel.day.'+state.date,state.day); if(live()) enqueue({action:'saveBody',date:state.date,water:w}); render(); },1500); toast('+16 oz water'); };
 
 /* ======================= CHECK-OUT ======================= */
-let out={};
+let out={}, outT={};   // out = what the form shows; outT = only what you changed
 function renderOut(){
-  out={...(state.day.checkout||{}),...LS.get('fuel.outDraft.'+state.date,{})};
+  outT=LS.get('fuel.outDraft.'+state.date,{}); out={...(state.day.checkout||{}),...outT};
   const types=(out['Exercise Types']||'').split(/,\s*/).filter(Boolean); const ex=$('#exTypes'); ex.innerHTML='';
   EX_TYPES.forEach(t=>{ const b=document.createElement('button'); b.textContent=t; b.className=types.includes(t)?'on':'';
-    b.onclick=()=>{ b.classList.toggle('on'); out['Exercise Types']=$$('#exTypes button.on').map(x=>x.textContent).join(', '); draft(); }; ex.appendChild(b); });
+    b.onclick=()=>{ b.classList.toggle('on'); out['Exercise Types']=$$('#exTypes button.on').map(x=>x.textContent).join(', '); draft('Exercise Types'); }; ex.appendChild(b); });
   $$('[data-seg]').forEach(box=>{ const k=box.dataset.seg; box.innerHTML='';
     box.dataset.opts.split(',').forEach(o=>{ const b=document.createElement('button'); b.textContent=o; b.className=String(out[k])===o?'on':'';
-      b.onclick=()=>{ const on=b.classList.contains('on'); box.querySelectorAll('button').forEach(x=>x.classList.remove('on')); if(!on){b.classList.add('on'); out[k]=o;} else out[k]=''; draft(); }; box.appendChild(b); }); });
-  $$('[data-sw]').forEach(b=>{ const k=b.dataset.sw; b.classList.toggle('on',/^y/i.test(out[k]||'')); b.onclick=()=>{ b.classList.toggle('on'); out[k]=b.classList.contains('on')?'Y':'N'; draft(); }; });
+      b.onclick=()=>{ const on=b.classList.contains('on'); box.querySelectorAll('button').forEach(x=>x.classList.remove('on')); if(!on){b.classList.add('on'); out[k]=o;} else out[k]=''; draft(k); }; box.appendChild(b); }); });
+  $$('[data-sw]').forEach(b=>{ const k=b.dataset.sw; b.classList.toggle('on',/^y/i.test(out[k]||'')); b.onclick=()=>{ b.classList.toggle('on'); out[k]=b.classList.contains('on')?'Y':'N'; draft(k); }; });
   $$('[data-fld]').forEach(el=>{ const k=el.dataset.fld; if(document.activeElement===el) return; let v=out[k]||''; if(el.dataset.time) v=to24(v); el.value=v;
-    el.oninput=()=>{ out[k]=el.dataset.time?fmt12full(el.value):el.value; draft(); }; });
+    el.oninput=()=>{ out[k]=el.dataset.time?fmt12full(el.value):el.value; draft(k); }; });
   const meals=mealBuckets();
   $('#mealsAuto').innerHTML=Object.values(meals).some(Boolean)?'Meals auto-filled into Daily Log (only if those cells are empty):<br>'+Object.entries(meals).filter(x=>x[1]).map(x=>`<b>${x[0]}:</b> ${esc(x[1])}`).join('<br>'):'';
 }
-function draft(){ LS.set('fuel.outDraft.'+state.date,out); }
+function draft(k){ outT[k]=out[k]; LS.set('fuel.outDraft.'+state.date,outT); }
 function to24(s){ const m=String(s).match(/(\d{1,2}):(\d{2})\s*([AP])M?/i); if(!m) return /^\d{2}:\d{2}$/.test(s)?s:''; let h=Number(m[1])%12; if(/p/i.test(m[3])) h+=12; return String(h).padStart(2,'0')+':'+m[2]; }
 function fmt12full(hm){ if(!hm) return ''; let [h,m]=hm.split(':').map(Number); const ap=h>=12?'PM':'AM'; h=h%12||12; return `${h}:${String(m).padStart(2,'0')} ${ap}`; }
 function mealBuckets(){ const b={'Breakfast':[],'Lunch':[],'Dinner':[],'Snacks / Drinks':[]};
@@ -919,9 +946,10 @@ function mealBuckets(){ const b={'Breakfast':[],'Lunch':[],'Dinner':[],'Snacks /
     const k=drink?'Snacks / Drinks':h<11?'Breakfast':h<16?'Lunch':'Dinner'; const c=CHIPS.find(c=>c.food===e.food);
     b[k].push(`${amtLabel(e)} ${c?c.n.toLowerCase():e.food}`.trim()+` (${fmt12full(e.time)})`); });
   const o={}; for(const k in b) o[k]=b[k].join(', '); return o; }
-$('#saveOut').onclick=()=>{ const fields={...out,...mealBuckets()}; fields['Monsters #']=(state.day.entries||[]).filter(e=>/monster/i.test(e.food)).length;
+$('#saveOut').onclick=()=>{ const fields={...outT,...mealBuckets()}; const mon=(state.day.entries||[]).filter(e=>/monster/i.test(e.food)).length;
+  if(mon) fields['Monsters #']=mon;   // 0 is never sent, so it can't wipe a count from your daily doc
   state.day.checkout={...(state.day.checkout||{}),...fields}; LS.set('fuel.day.'+state.date,state.day);
-  if(live()) enqueue({action:'saveCheckout',date:state.date,fields}); try{localStorage.removeItem('fuel.outDraft.'+state.date)}catch(e){}
+  if(live()) enqueue({action:'saveCheckout',date:state.date,fields}); outT={}; try{localStorage.removeItem('fuel.outDraft.'+state.date)}catch(e){}
   toast(live()?'Check-out saved':'Saved (demo)'); };
 
 
@@ -1016,8 +1044,14 @@ function trSets(t){ const out=[]; (t||tr).blocks.forEach((b,bi)=>{ const n=b.don
 function trStats(){ const s=trSets(); $('#trSets').textContent=s.length; $('#trVol').textContent=Math.round(s.reduce((a,x)=>a+(Number(x.reps)||0)*(Number(x.weight)||0),0)).toLocaleString(); }
 function startTick(){ clearInterval(trTick); trTick=setInterval(()=>{ if(!tr||!tr.start){ $('#trTime').textContent='0:00'; return; }
   const end=tr.end||Date.now(); const m=Math.floor((end-tr.start)/60000); $('#trTime').textContent=Math.floor(m/60)+':'+String(m%60).padStart(2,'0'); },1000); }
-function startRest(sec){ rest.end=Date.now()+sec*1000; $('#restBar').classList.remove('hide'); clearInterval(rest.t);
-  rest.t=setInterval(()=>{ const left=Math.round((rest.end-Date.now())/1000); if(left<=0){ $('#restTxt').textContent='Go! Next round'; if(navigator.vibrate) navigator.vibrate(300); clearInterval(rest.t); setTimeout(()=>$('#restBar').classList.add('hide'),4000); return; }
+// Beep needs a tap first on iPhone, so the "Round done" tap unlocks sound. Ring/silent switch still applies.
+let actx=null;
+function unlockAudio(){ try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); if(actx.state==='suspended') actx.resume(); }catch(e){} }
+function beep(){ if(!actx) return; try{ const t0=actx.currentTime; [0,.22,.44].forEach((t,i)=>{ const o=actx.createOscillator(), g=actx.createGain();
+    o.frequency.value=i===2?1320:880; g.gain.setValueAtTime(.0001,t0+t); g.gain.exponentialRampToValueAtTime(.35,t0+t+.02); g.gain.exponentialRampToValueAtTime(.0001,t0+t+.18);
+    o.connect(g); g.connect(actx.destination); o.start(t0+t); o.stop(t0+t+.2); }); }catch(e){} }
+function startRest(sec){ unlockAudio(); rest.end=Date.now()+sec*1000; const bar=$('#restBar'); bar.classList.remove('hide','go'); clearInterval(rest.t);
+  rest.t=setInterval(()=>{ const left=Math.round((rest.end-Date.now())/1000); if(left<=0){ $('#restTxt').textContent='Go! Next round'; bar.classList.add('go'); beep(); if(navigator.vibrate) navigator.vibrate(300); clearInterval(rest.t); setTimeout(()=>bar.classList.add('hide'),4000); return; }
     $('#restTxt').textContent='Rest '+Math.floor(left/60)+':'+String(left%60).padStart(2,'0'); },250); }
 $('#restAdd').onclick=()=>{ rest.end+=30000; }; $('#restStop').onclick=()=>{ clearInterval(rest.t); $('#restBar').classList.add('hide'); };
 // picker
@@ -1034,17 +1068,18 @@ $$('[data-add]').forEach(b=>b.onclick=()=>openPick(+b.dataset.add));
 $('#pickBg').onclick=closePick;
 $('#pickOk').onclick=()=>{ if(!pick.sel.length) return; addBlock(pick.sel); closePick(); };
 // save
-function sessionType(sets){ const eqs=new Set(), gs=new Set(sets.map(s=>s.group)); tr.blocks.forEach(b=>b.ex.forEach(e=>eqs.add(e.eq)));
+function sessionType(sets){ const gs=new Set(sets.map(s=>s.group));
   const cond=[...gs].every(g=>g==='Conditioning'||g==='Carries'); if(cond) return 'HIIT';
   if(gs.has('Conditioning')||gs.has('Carries')) return 'Mixed'; return 'Weights'; }
 $('#trSave').onclick=()=>{ const sets=trSets(); if(!sets.length){ toast('Nothing to save yet'); return; }
   const mins=tr.start?Math.max(1,Math.round(((tr.end||Date.now())-tr.start)/60000)):'';
   const st=sessionType(sets);
-  if(!confirm(`Save ${sets.length} sets (${st}, ${mins} min)?`)) return;
-  tr.end=tr.end||Date.now(); tr.saved=true; trSaveLS();
+  if(!confirm(`${tr.saved?'Update the saved workout:':'Save'} ${sets.length} sets (${st}, ${mins} min)?`)) return;
+  tr.sid=tr.sid||('W'+Date.now().toString(36)); tr.end=tr.end||Date.now(); tr.saved=true; trSaveLS();
   tr.blocks.forEach(b=>b.ex.forEach((e,ei)=>{ const r=b.rounds[Math.max(0,(b.done||b.rounds.length)-1)][ei]; setLast(e.n,{...r,eq:e.eq}); }));
   const hist=LS.get('fuel.trainHist',[]).filter(h=>h.date!==state.date); hist.push({date:state.date,sets:sets.map(s=>({g:s.group}))}); LS.set('fuel.trainHist',hist.slice(-60));
-  if(live()) enqueue({action:'addSets',date:state.date,sessionType:st,minutes:mins,sets:sets.map(({group,...x})=>x)});
+  if(live()){ queue=queue.filter(q=>!(q.action==='addSets'&&q.session===tr.sid&&!inflight.has(q)));   // newer save replaces a waiting one
+    enqueue({action:'addSets',date:state.date,session:tr.sid,sessionType:st,minutes:mins,sets:sets.map(({group,...x})=>x)}); }
   // pre-fill check-out
   const d=LS.get('fuel.outDraft.'+state.date,{}); const types=new Set((d['Exercise Types']||'').split(/,\s*/).filter(Boolean));
   if(st!=='HIIT') types.add('Weights'); if(sets.some(s=>/Farmer/.test(s.exercise))) types.add('Farmer carries'); if(sets.some(s=>/Bag/.test(s.exercise))) types.add('Heavy bag');
@@ -1130,8 +1165,8 @@ async function loadPlan(){
 }
 (function(){ const t=LS.get('fuel.planTab','it'); planTab=t; $$('#ptabs button').forEach(x=>x.classList.toggle('on',x.dataset.p===t)); })();
 // Tap the date at the top to jump to any day.
-$('#dateTitle').onclick=()=>{ const p=$('#datePick'); p.value=state.date; p.max=todayKey();
-  try{ if(p.showPicker) p.showPicker(); else { p.focus(); p.click(); } }catch(e){ p.focus(); p.click(); } };
+// The (invisible) date box sits on top of the title, so a tap opens the phone's own picker.
+$('#datePick').onclick=e=>{ try{ e.target.showPicker&&e.target.showPicker(); }catch(err){} };
 $('#datePick').onchange=e=>{ const v=e.target.value; if(v&&v<=todayKey()&&v!==state.date){ state.date=v; load(); } };
 
 
@@ -1190,8 +1225,9 @@ function renderGlance(){
 $('#sUrl').value=cfg.url; $('#sTok').value=cfg.token;
 $('#saveSet').onclick=()=>{ cfg={url:$('#sUrl').value.trim(),token:$('#sTok').value.trim()}; LS.set('fuel.cfg',cfg); LS.set('fuel.bootAt',0);
   if(!live()){ Object.assign(state,{goals:DEMO_GOALS,foods:DEMO_FOODS,targets:DEMO_TARGETS}); } load(); toast(live()?'Connecting…':'Demo mode'); };
+$('#refreshData').onclick=()=>{ if(!live()){ toast('Demo mode'); return; } LS.set('fuel.bootAt',0); toast('Refreshing…'); load(); };
 function show(v){ ['today','log','nut','train','body','out'].forEach(x=>$('#v-'+x).classList.toggle('hide',x!==v)); $$('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
-  window.scrollTo(0,0); $('#queueNote').textContent=queue.length?queue.length+' change(s) waiting to save.':''; }
+  window.scrollTo(0,0); const sk=LS.get('fuel.skipped',[]); $('#queueNote').innerHTML=(queue.length?queue.length+' change(s) waiting to save.':'')+(sk.length?'<br>Last skipped: '+sk.map(esc).join('<br>'):''); }
 $$('nav button').forEach(b=>b.onclick=()=>show(b.dataset.v));
 $('#goLog').onclick=()=>show('log');
 $('#prevDay').onclick=()=>{ state.date=shift(state.date,-1); load(); };
