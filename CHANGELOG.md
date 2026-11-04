@@ -18,6 +18,7 @@ Newest first. Each version has a number and a short name.
 
 ## v6.1.2 (Nov 3, 2026)
 **Backend: No.**
+- Added **TESTING.md** and automated tests in `tests/` (`node tests/run.js`), with 18 checks against the real Code.gs on a mock copy of the sheets. They pass on v6.1.2; the pre-v6.1 backend fails 8 of them.
 - The version number now shows at the bottom of **Check-out → Settings** (for example, `Pillars Fuel v6.1.2 "Ironclad"`), with a **what's new** link to this file.
 
 ## v6.1.1 (Nov 3, 2026)
