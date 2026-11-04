@@ -16,6 +16,11 @@ Newest first. Each version has a number and a short name.
 
 ---
 
+## v6.1.3 (Nov 4, 2026)
+**Backend: No.**
+- **Last 7 Days:** today is left out of the average and the "days on target" count until the day is over, so the stats don't read like a bad week at 5 AM. Today's bar still shows. Past days you browse to count normally.
+- **Daily Plan card:** hides the doc's "Data notes" housekeeping line. The doc itself is unchanged.
+
 ## v6.1.2 (Nov 3, 2026)
 **Backend: No.**
 - Added **TESTING.md** and automated tests in `tests/` (`node tests/run.js`), with 18 checks against the real Code.gs on a mock copy of the sheets. They pass on v6.1.2; the pre-v6.1 backend fails 8 of them.

@@ -629,7 +629,7 @@ function demoDay(date){
 
 /* ======================= STATE ======================= */
 // Bump with every release; matches CHANGELOG.md.
-const APP_VERSION='v6.1.2', APP_VERSION_NAME='Ironclad';
+const APP_VERSION='v6.1.3', APP_VERSION_NAME='Ironclad';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const LS={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 let cfg=LS.get('fuel.cfg',{url:'',token:''});
@@ -775,9 +775,11 @@ function renderWeek(){
     s+=`<text x="${cx}" y="${H-5}" text-anchor="middle" style="${x.date===state.date?'fill:var(--ink);font-weight:700':''}">${lbl}</text>`; });
   s+=`<line x1="${L}" x2="${W}" y1="${y(goal)}" y2="${y(goal)}" stroke="var(--ok)" stroke-width="1.5" stroke-dasharray="5 4"/>`;
   $('#wkChart').innerHTML=s;
-  const logged=have.length, avg=logged?have.reduce((a,b)=>a+b,0)/logged:0;
-  const hit=have.filter(v=>m==='c'?v<=goal:v>=goal*0.9).length;
-  $('#wkNote').textContent= logged? `avg ${m==='c'?r1(avg):Math.round(avg).toLocaleString()} · ${hit}/${logged} days ${m==='c'?'under max':'on target'}` : 'no data';
+  // Today isn't finished, so it's left out of the average and the on-target count (its bar still shows).
+  const done=data.filter(x=>x[m]!=null&&x.date!==todayKey()).map(x=>x[m]);
+  const logged=done.length, avg=logged?done.reduce((a,b)=>a+b,0)/logged:0;
+  const hit=done.filter(v=>m==='c'?v<=goal:v>=goal*0.9).length;
+  $('#wkNote').textContent= logged? `avg ${m==='c'?r1(avg):Math.round(avg).toLocaleString()} · ${hit}/${logged} days ${m==='c'?'under max':'on target'}` : (have.length?'today only so far':'no data');
 }
 $$('#wkTabs button').forEach(b=>b.onclick=()=>{ state.wk=b.dataset.m; $$('#wkTabs button').forEach(x=>x.classList.toggle('on',x===b)); renderWeek(); });
 
@@ -1143,7 +1145,8 @@ function renderPlan(){
   if(!plan.found){ body.innerHTML='<div class="empty">No Daily Plan doc for this date.</div>'; $('#planMeta').textContent=''; return; }
   const P=parsePlan(plan.md||'');
   $('#planMeta').innerHTML= plan.url? `<a href="${esc(plan.url)}" target="_blank" rel="noopener" style="color:var(--carb)">open doc ↗</a>` : 'sample';
-  let items=(P[planTab]||[]).filter(x=>!x.plain || planTab!=='jr');
+  let items=(P[planTab]||[]).filter(x=>!x.plain || planTab!=='jr')
+    .filter(x=>!/^[*_\\]*Data notes/i.test(x.t));   // housekeeping notes for you, not plan content
   if(planTab==='jr') items=items.filter(journalFilled);
   if(planTab==='sw') items=items.filter(x=>!/^\*?Weather:/.test(x.t) || !x.plain);
   if(!items.length){ body.innerHTML=`<div class="empty">${planTab==='jr'?'Nothing written in the journal yet.':'Nothing in this section.'}</div>`; return; }
