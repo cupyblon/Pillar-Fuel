@@ -16,6 +16,11 @@ Newest first. Each version has a number and a short name.
 
 ---
 
+## v6.1.1 (Nov 3, 2026)
+**Backend: No.**
+- Repo renamed **Scout → Pillar-Fuel**. The app's address is now **https://cupyblon.github.io/Pillar-Fuel/**.
+- Your settings and offline queue carry over, since both addresses are on the same site. But the old home-screen icon points to the old address, which stops working. Delete it and add the new address from Safari (**Share → Add to Home Screen**).
+
 ## v6.1 "Ironclad" (Nov 3, 2026)
 **Backend: Yes.** This version came out of a full line-by-line code review. It targets bugs that could quietly put wrong data in your sheets.
 
