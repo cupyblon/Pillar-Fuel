@@ -16,6 +16,10 @@ Newest first. Each version has a number and a short name.
 
 ---
 
+## v6.1.2 (Nov 3, 2026)
+**Backend: No.**
+- The version number now shows at the bottom of **Check-out → Settings** (for example, `Pillars Fuel v6.1.2 "Ironclad"`), with a **what's new** link to this file.
+
 ## v6.1.1 (Nov 3, 2026)
 **Backend: No.**
 - Repo renamed **Scout → Pillar-Fuel**. The app's address is now **https://cupyblon.github.io/Pillar-Fuel/**.

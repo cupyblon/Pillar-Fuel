@@ -7,7 +7,7 @@ through a private Google Apps Script endpoint.
 - App: `index.html` (single file, installable from Safari via Add to Home Screen)
 - Backend: `apps-script/Code.gs` (deploy as a web app, protected by a token)
 - Setup: see `SETUP.md`
-- Version history: see `CHANGELOG.md` (current: **v6.1.1**) · Live: https://cupyblon.github.io/Pillar-Fuel/
+- Version history: see `CHANGELOG.md` (current: **v6.1.2**) · Live: https://cupyblon.github.io/Pillar-Fuel/
 
 No data or credentials live in this repo. The script URL and token are stored only on the phone.
 Without them the app runs in demo mode.

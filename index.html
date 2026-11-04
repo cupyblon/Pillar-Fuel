@@ -499,6 +499,7 @@ html.dash:not(.desk) main{max-width:640px}
     <button class="btn sec" id="saveSet">Save &amp; connect</button>
     <button class="btn sec" id="refreshData" style="margin-top:8px">Refresh foods, targets &amp; goals</button>
     <div class="note" id="queueNote"></div>
+    <div class="note" id="verNote" style="margin-top:10px"></div>
   </div>
 </section>
 </main>
@@ -627,6 +628,8 @@ function demoDay(date){
 }
 
 /* ======================= STATE ======================= */
+// Bump with every release; matches CHANGELOG.md.
+const APP_VERSION='v6.1.2', APP_VERSION_NAME='Ironclad';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const LS={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 let cfg=LS.get('fuel.cfg',{url:'',token:''});
@@ -1223,6 +1226,7 @@ function renderGlance(){
 
 /* ======================= SETTINGS / NAV ======================= */
 $('#sUrl').value=cfg.url; $('#sTok').value=cfg.token;
+$('#verNote').innerHTML=`Pillars Fuel <b>${APP_VERSION}</b> "${APP_VERSION_NAME}" · <a href="https://github.com/cupyblon/Pillar-Fuel/blob/main/CHANGELOG.md" target="_blank" rel="noopener" style="color:var(--carb)">what's new</a>`;
 $('#saveSet').onclick=()=>{ cfg={url:$('#sUrl').value.trim(),token:$('#sTok').value.trim()}; LS.set('fuel.cfg',cfg); LS.set('fuel.bootAt',0);
   if(!live()){ Object.assign(state,{goals:DEMO_GOALS,foods:DEMO_FOODS,targets:DEMO_TARGETS}); } load(); toast(live()?'Connecting…':'Demo mode'); };
 $('#refreshData').onclick=()=>{ if(!live()){ toast('Demo mode'); return; } LS.set('fuel.bootAt',0); toast('Refreshing…'); load(); };
