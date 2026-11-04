@@ -35,6 +35,12 @@ Backend deploys and repo housekeeping. The token and URL themselves are **never*
 - **Same token:** only run `setToken()` when you *want* a new token (for example, if it leaked). Saving the code doesn't need it.
 - **Old deployments:** each URL from a past **New deployment** stays live, running its old code with your current token. Archive them under **Manage deployments → select the old one → Archive**, so an old v6.1.3 copy can't write the Training column again.
 
+## v6.2.1 (Nov 4, 2026)
+**Backend: No.**
+- **Daily Plan card, Itinerary tab:** today's **REACH OUT** person, opener and upcoming birthdays now show on top. They come from the new REACH OUT section of the Daily Plan doc.
+- **Fuel at a glance:** a 📞 line shows who to reach out to today and how (call or text).
+- Goes with the Daily Plan scheduled-task update the same day: WFH and weekend modes, plus a daily REACH OUT pick from the Pillars Tracker's Reach Out List.
+
 ## v6.2 "Fine Print" (Nov 4, 2026)
 **Backend: Yes.** Paste the new Code.gs and redeploy with **Manage deployments → Edit → New version** (keeps the URL and token).
 

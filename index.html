@@ -643,7 +643,7 @@ function demoDay(date){
 
 /* ======================= STATE ======================= */
 // Bump with every release; matches CHANGELOG.md.
-const APP_VERSION='v6.2', APP_VERSION_NAME='Fine Print';
+const APP_VERSION='v6.2.1', APP_VERSION_NAME='Fine Print';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const LS={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 let cfg=LS.get('fuel.cfg',{url:'',token:''});
@@ -1136,7 +1136,7 @@ function renderWkSets(){
 
 /* ======================= DAILY PLAN ======================= */
 // Reads the "YYYY-MM-DD Daily Plan" Google Doc (Markdown export) and shows 4 sections.
-const DEMO_PLAN_MD="# Sample day (demo)\n\n## TODAY'S ITINERARY\n\n  - **All day:** Sample: a friend's birthday, send a text *(Relationships)*\n  - **4:45 AM:** Workout, 2–6 exercises x 3–6 sets, aim for a sweat; out the door by 5:50 *(Physical)*\n  - **5:50 AM:** Walk 1 to the train (dark start, wear something visible) *(Physical)*\n  - **6:05–6:25 AM:** Morning journal on the train *(Emotional)*\n  - **7:30–8:00 AM:** Walk 2 to work *(Physical)*\n  - **3:55–4:46 PM:** Walk 3 to the train *(Physical)*\n  - **Train home:** Text at least one person, then study OR a reconnect call *(Relationships / Intellectual)*\n  - **6:00–7:30 PM:** Family dinner, phones away *(Relationships)*\n  - **8:30–9:00 PM:** Evening check-out + meditate *(Emotional)*\n  - **9:15 PM:** Lights out (work night) *(Physical)*\n\n## SQUEEZE-INS (moving the needle toward upcoming deadlines)\n\n  - **Physical:** Sample nudge: no sweat logged this week yet. At 4:45: squats 3x10, rows 3x10, push-ups 3 sets, farmer carries 3 trips (about 25 min).\n  - **Relationships, due today:** Sample nudge: birthday text on the train in.\n  - **Emotional:** Sample nudge: bed was after 11 PM three nights; cap screens at 8:30.\n\n## MORNING JOURNAL\n\n**GRATEFUL (3)**\n\n  - 1\\) Sample: my family\n  - 2\\)\n  - 3\\)\n\n**TO BE** (love, support, build)\n\n  - Today I want to be: Sample: present at dinner\n  - Today I want to:\n\n## SUN & WEATHER (Brookfield)\n\n**SUN**\n\n  - Dawn: 5:54 AM · Sunrise: 6:24 AM\n  - Sunset: 4:45 PM · Dusk: 5:15 PM\n  - Day length: 10h 20m (-2m 25s vs yesterday)\n\n**WALKS** (skip if WFH)\n\n  - Walk 1, home to Congress Park (5:50 AM): DARK until 5:54 dawn, TWILIGHT after · sample weather\n  - Walk 2, Lake-Cook to work (7:30 AM): DAYLIGHT · sample weather\n  - Walk 3, work to Lake-Cook (3:55–4:21 PM start): DAYLIGHT, TWILIGHT after 4:45 sunset · sample weather\n  - Walk 4, Congress Park to home (5:52 PM): DARK the whole way · sample weather\n\n**WEATHER**\n\n  - Today: Sample only. The live app shows the real forecast from your Daily Plan doc.\n  - Walker call: Sample: umbrella for Walks 3 and 4.\n";
+const DEMO_PLAN_MD="# Sample day (demo)\n\n## TODAY'S ITINERARY\n\n  - **All day:** Sample: a friend's birthday, send a text *(Relationships)*\n  - **4:45 AM:** Workout, 2–6 exercises x 3–6 sets, aim for a sweat; out the door by 5:50 *(Physical)*\n  - **5:50 AM:** Walk 1 to the train (dark start, wear something visible) *(Physical)*\n  - **6:05–6:25 AM:** Morning journal on the train *(Emotional)*\n  - **7:30–8:00 AM:** Walk 2 to work *(Physical)*\n  - **3:55–4:46 PM:** Walk 3 to the train *(Physical)*\n  - **Train home:** Text at least one person, then study OR a reconnect call *(Relationships / Intellectual)*\n  - **6:00–7:30 PM:** Family dinner, phones away *(Relationships)*\n  - **8:30–9:00 PM:** Evening check-out + meditate *(Emotional)*\n  - **9:15 PM:** Lights out (work night) *(Physical)*\n\n## REACH OUT\n\n  - **Today: Sample cousin (cousin)**, call, 10 min. Every-other-week list, no logged contact yet.\n  - Opener: \"Hey, working from home today. Got 10 minutes to catch up?\"\n  - Coming up: a sample birthday Saturday.\n\n## SQUEEZE-INS (moving the needle toward upcoming deadlines)\n\n  - **Physical:** Sample nudge: no sweat logged this week yet. At 4:45: squats 3x10, rows 3x10, push-ups 3 sets, farmer carries 3 trips (about 25 min).\n  - **Relationships, due today:** Sample nudge: birthday text on the train in.\n  - **Emotional:** Sample nudge: bed was after 11 PM three nights; cap screens at 8:30.\n\n## MORNING JOURNAL\n\n**GRATEFUL (3)**\n\n  - 1\\) Sample: my family\n  - 2\\)\n  - 3\\)\n\n**TO BE** (love, support, build)\n\n  - Today I want to be: Sample: present at dinner\n  - Today I want to:\n\n## SUN & WEATHER (Brookfield)\n\n**SUN**\n\n  - Dawn: 5:54 AM · Sunrise: 6:24 AM\n  - Sunset: 4:45 PM · Dusk: 5:15 PM\n  - Day length: 10h 20m (-2m 25s vs yesterday)\n\n**WALKS** (skip if WFH)\n\n  - Walk 1, home to Congress Park (5:50 AM): DARK until 5:54 dawn, TWILIGHT after · sample weather\n  - Walk 2, Lake-Cook to work (7:30 AM): DAYLIGHT · sample weather\n  - Walk 3, work to Lake-Cook (3:55–4:21 PM start): DAYLIGHT, TWILIGHT after 4:45 sunset · sample weather\n  - Walk 4, Congress Park to home (5:52 PM): DARK the whole way · sample weather\n\n**WEATHER**\n\n  - Today: Sample only. The live app shows the real forecast from your Daily Plan doc.\n  - Walker call: Sample: umbrella for Walks 3 and 4.\n";
 let planTab='it', plan=null;
 function mdInline(t){
   return esc(t.replace(/\\([!#()\-_.*>\\[\]])/g,'$1'))
@@ -1163,7 +1163,7 @@ function parsePlan(md){
     secs[cur].push({sub,t,plain:true});
   });
   const find=k=>{ const key=Object.keys(secs).find(x=>x.startsWith(k)); return key?secs[key]:[]; };
-  return {it:find("TODAY'S ITINERARY"),sq:find('SQUEEZE'),sw:find('SUN & WEATHER'),jr:find('MORNING JOURNAL')};
+  return {it:find("TODAY'S ITINERARY"),ro:find('REACH OUT'),sq:find('SQUEEZE'),sw:find('SUN & WEATHER'),jr:find('MORNING JOURNAL')};
 }
 // Journal: keep only lines you actually wrote something in.
 function journalFilled(x){
@@ -1191,6 +1191,8 @@ function renderPlan(){
   });
   h+='</ul>';
   if(call) h=`<div class="call">${mdInline(call)}</div>`+h;
+  // Itinerary tab: today's REACH OUT person sits on top (from the doc's REACH OUT section).
+  if(planTab==='it'){ const ro=(P.ro||[]).filter(x=>!x.plain); if(ro.length) h=`<div class="ph">Reach out</div><ul class="pl ro">${ro.map(x=>`<li>${mdInline(x.t)}</li>`).join('')}</ul><div class="ph">Itinerary</div>`+h; }
   body.innerHTML=h;
   if(typeof renderGlance==='function') renderGlance();
 }
@@ -1249,6 +1251,9 @@ function renderGlance(){
   items.push(['🔥','Calories',`${nice2(Math.max(0,g.kcal-(T.kcal||0)))} left`,`${nice2(T.kcal||0)} of ${g.kcal.toLocaleString()}`]);
   items.push(['🥬','Net carbs',(T.c||0)>g.carbs?'over max':`${Math.round(g.carbs-(T.c||0))} g left`,`${r1(T.c||0)} of ${g.carbs} g max`]);
   items.push(['⏱','Fasting',$('#fastVal').textContent,$('#fastSub').textContent]);
+  if(plan&&plan.found&&plan.md){ const r=(parsePlan(plan.md).ro||[]).find(x=>/^\*\*Today:/.test(x.t));
+    if(r){ const t=r.t.replace(/\\/g,'').replace(/\*\*/g,''); const m=t.match(/^Today:\s*([^,(]+?)\s*(\([^)]*\))?,\s*([^.]+)/);
+      items.push(['📞','Reach out',m?m[1].trim():t.slice(7,40),m?m[3].trim():'']); } }
   if(T.caf) items.push(['☕','Caffeine',`${nice2(T.caf)} mg`,T.caf>400?'over 400 mg':`of 400 mg max`]);
   const w=(Number(d.body&&d.body.water)||0)+state.waterAdd; items.push(['💧','Water',`${w} oz`,`goal ${g.water||128} oz`]);
   if(d.body&&d.body.steps) items.push(['👣','Steps',Number(d.body.steps).toLocaleString(),`goal ${(g.steps||10000).toLocaleString()}`]);
