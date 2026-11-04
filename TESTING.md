@@ -58,6 +58,7 @@ Where to look:
 | 8 | Body → type a test weight → Save | Daily Body, today, column **B** | Shows the test weight |
 | 9 | Body → clear the weight box → Save | Daily Body, column **B** | Cell is **empty** |
 | 10 | Body → change nothing → Save | App toast | Says **No changes** |
+| 10b | Body → change steps → Save | Daily Body H2 | Still a working formula (no **#REF!**), today's H cell not typed in |
 | 11 | Today → Daily Plan card | Card | Shows today's doc (not an old copy) |
 | 12 | Edit any value on the Foods tab → Settings → **Refresh foods, targets & goals** | App | The new value appears |
 
@@ -75,3 +76,4 @@ Where to look:
 | Date | Version | Automated | Phone checklist | Notes |
 |---|---|---|---|---|
 | 2026-11-03 | v6.1.2 | 18/18 pass | not run yet | |
+| 2026-11-04 | v6.1.4 | 19/19 pass | not run yet | added formula-column check |

@@ -16,6 +16,14 @@ Newest first. Each version has a number and a short name.
 
 ---
 
+## v6.1.4 (Nov 4, 2026)
+**Backend: Yes.** Paste the new Code.gs and redeploy.
+- **Fixed #REF! in Daily Body column H.**
+  - **Cause:** H2 holds a formula that pulls Training (min) from Strength → Sessions and fills the whole column on its own. The app's Body save wrote a `0` into H7, and the formula can't write over a filled cell, so the column broke.
+  - **Backend:** never writes column H now, and the code comments mark C and H as never-write.
+  - **App:** the Training (min) box on the Body tab is read-only and labeled "from Train tab". Your minutes still arrive through the Train tab → Strength sheet → the H2 formula.
+- **Tests:** a new check fails if the app ever writes to a formula column (C or H) in Daily Body. There are now 19 checks.
+
 ## v6.1.3 (Nov 4, 2026)
 **Backend: No.**
 - **Last 7 Days:** today is left out of the average and the "days on target" count until the day is over, so the stats don't read like a bad week at 5 AM. Today's bar still shows. Past days you browse to count normally.

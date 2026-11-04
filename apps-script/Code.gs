@@ -11,7 +11,9 @@
  *  - Carnivore Nutrition > Food Log : columns A-D (Date, Food, Amount, Unit)
  *                                     + AK (Note: time + app id, "@18:44 app #L…" — the id stops retry duplicates).
  *    Columns E-AJ are ARRAYFORMULAs that do the math from the Foods tab.
- *  - Carnivore Nutrition > Daily Body: A, B, D-H (C = 7-day avg is a formula).
+ *  - Carnivore Nutrition > Daily Body: A, B, D-G. NEVER C or H: C2 (7-day avg) and H2
+ *    (Training min, pulled from Strength > Sessions) are formulas that fill their whole column;
+ *    typing into any cell below them breaks the column with #REF!.
  *  - Pillars Tracker > Daily Log    : check-out columns, matched by header name.
  *  READ ONLY: Daily folder "YYYY-MM-DD Daily Plan" docs (GET ?action=plan&date=...).
  *  - Strength Training > Workout Log: A-K, one row per set (L-N are formulas);
@@ -323,7 +325,7 @@ function saveBody_(b) {
     else sh.getRange(r, col).setValue(val);
   };
   set(2, b.weight); set(4, b.steps); set(5, b.water);
-  set(6, b.exercise); set(7, b.note); set(8, b.training);
+  set(6, b.exercise); set(7, b.note);   // column H (training) is a formula: never written
   return { ok: true, row: r };
 }
 

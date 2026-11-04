@@ -1,6 +1,6 @@
 // Caches the app shell so it opens instantly and works offline.
 // Data calls to script.google.com always go to the network.
-const CACHE = 'fuel-v12';
+const CACHE = 'fuel-v13';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

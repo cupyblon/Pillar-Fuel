@@ -58,6 +58,11 @@ const APP='file://'+path.join(__dirname,'..','index.html');
   const p=env.get({token:'t',action:'plan',date:'2026-11-03'}); ok(/GOOD/.test(p.md), '6) plan doc used: '+p.md);
   // 8 bootstrap no longer opens Strength sheet
   env.opens.n=0; const bs=env.get({token:'t',action:'bootstrap',date:'2026-11-03'}); ok(!('exercises' in bs), '8) bootstrap has no exercises; spreadsheets opened = '+env.opens.n);
+  // formula columns never written (Daily Body C and H)
+  await pg.evaluate("show('body')"); await pg.evaluate("state.day.body.training=0; render()"); await pg.fill('#bSteps','9000'); await pg.evaluate("$('#saveBody').click()"); await pg.waitForTimeout(500);
+  // Server must ignore training even if an old app copy sends it.
+  env.post(JSON.stringify({token:'t',action:'saveBody',date:'2026-11-03',training:0,exercise:15}));
+  const bad=env.nut['Daily Body'].badWrites||[]; ok(!bad.length, 'F) no writes to formula columns C/H in Daily Body'+(bad.length?': '+bad.join(', '):''));
   // 11 classic date picker covers the title
   await pg.evaluate("show('today')"); const w=await pg.evaluate("$('#datePick').getBoundingClientRect().width"); ok(w>50, '11) classic date tap area width = '+Math.round(w));
   // version shown

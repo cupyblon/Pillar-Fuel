@@ -453,7 +453,7 @@ html.dash:not(.desk) main{max-width:640px}
     </div>
     <div class="row">
       <div class="fld"><label>Exercise (min)</label><input class="f" id="bEx" type="number" inputmode="numeric"></div>
-      <div class="fld"><label>Training (min)</label><input class="f" id="bTr" type="number" inputmode="numeric"></div>
+      <div class="fld"><label>Training (min) · from Train tab</label><input class="f" id="bTr" type="number" readonly tabindex="-1" style="opacity:.65" title="Filled automatically from your Strength sheet"></div>
     </div>
     <div class="fld"><label>Note</label><input class="f" id="bNote"></div>
     <button class="btn" id="saveBody">Save body</button>
@@ -629,7 +629,7 @@ function demoDay(date){
 
 /* ======================= STATE ======================= */
 // Bump with every release; matches CHANGELOG.md.
-const APP_VERSION='v6.1.3', APP_VERSION_NAME='Ironclad';
+const APP_VERSION='v6.1.4', APP_VERSION_NAME='Ironclad';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const LS={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 let cfg=LS.get('fuel.cfg',{url:'',token:''});
@@ -915,7 +915,7 @@ function renderBody(){
 }
 $('#saveBody').onclick=()=>{ clearTimeout(window._wt);
   const b=state.day.body=state.day.body||{}; const norm=x=>(x===undefined||x===null)?'':String(x);
-  const F={weight:'#bWeight',steps:'#bSteps',water:'#bWater',exercise:'#bEx',training:'#bTr',note:'#bNote'};
+  const F={weight:'#bWeight',steps:'#bSteps',water:'#bWater',exercise:'#bEx',note:'#bNote'};   // Training is read-only (sheet formula)
   const body={action:'saveBody',date:state.date}; let n=0;
   for(const k in F){ const x=$(F[k]).value.trim(); const val=(k==='note'||x==='')?x:Number(x);
     if(norm(val)!==norm(b[k])){ body[k]=val; b[k]=val; n++; } }

@@ -5,7 +5,8 @@ const CODE=process.env.GS||path.join(__dirname,'..','apps-script','Code.gs');
 function Sheet(name,rows,maxRows){ this.name=name; this.d=rows.map(r=>r.slice()); this.max=maxRows||Math.max(rows.length,50); }
 Sheet.prototype={
   cell(r,c){ const row=this.d[r-1]||[]; const v=row[c-1]; return v===undefined?'':v; },
-  put(r,c,v){ while(this.d.length<r) this.d.push([]); this.d[r-1][c-1]=v; if(r>this.max) this.max=r; },
+  put(r,c,v){ if(this.formulaCols&&r>=2&&this.formulaCols.includes(c)) (this.badWrites=this.badWrites||[]).push(String.fromCharCode(64+c)+r+'='+JSON.stringify(v));
+    while(this.d.length<r) this.d.push([]); this.d[r-1][c-1]=v; if(r>this.max) this.max=r; },
   getLastRow(){ for(let i=this.d.length;i>0;i--) if((this.d[i-1]||[]).some(v=>v!==''&&v!==undefined)) return i; return 0; },
   getLastColumn(){ return Math.max(...this.d.map(r=>r.length)); },
   getMaxRows(){ return this.max; }, insertRowsAfter(a,n){ this.max+=n; },
@@ -25,6 +26,7 @@ function makeEnv(){
     'Deep Dive':new Sheet('Deep Dive',[[''],[''],['h']]) };
   const head=['Date','Wins','Misses','Breakfast','Lunch','Dinner','Snacks / Drinks','Monsters #','Exercise Types','Exercise Min','Sweat? (Y/N)','Woke','Bed'];
   const trk={ 'Daily Log':new Sheet('Daily Log',[head,[d('2026-11-03'),'','','','','','',2,'','','','6:00 AM','']]) };
+  nut['Daily Body'].formulaCols=[3,8];   // C and H are column-filling formulas in the real sheet
   const str={ 'Workout Log':new Sheet('Workout Log',[['Date','Type','Exercise','Set','Reps','Wt','Time','Dist','Rest','Effort','Notes']],100),
     'Sessions':new Sheet('Sessions',[['Date','Type','Min','Note']]),'Exercises':new Sheet('Exercises',[['n','g','e']]) };
   const books={'1mAkG128NSk-IzEJg-EZTNbNBz7YmmhnlBjJJAYMoyhA':nut,'1f2wlJqIKezVA1OHgX1OyHAwTmrXsCE019LNKDu0UvuA':trk,'1LYztTug2l94R81f5B0mgak0F3pR9GkM-g1hyBuWETpo':str};
