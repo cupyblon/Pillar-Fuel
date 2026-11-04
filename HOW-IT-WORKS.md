@@ -85,10 +85,10 @@ Three spreadsheets and a folder. Column letters matter, because the backend writ
 
 | Sheet → tab | Columns the app **writes** | Columns that are **formulas** (never written) |
 |---|---|---|
-| Nutrition → **Food Log** | A Date · B Food · C Amount · D Unit · AK Note (`@08:00 app #L…`) | E–AJ: nutrients per entry (`ARRAYFORMULA` lookup from Foods) |
-| Nutrition → **Foods** | (you edit by hand) A Name · B Category · C Serving · D Grams per serving · E–AI 31 nutrients per 100 g | — |
+| Nutrition → **Food Log** | A Date · B Food · C Amount · D Unit · AK Note (`@08:00 app #L…`) | E–AJ: nutrients per entry (`ARRAYFORMULA` lookup from Foods) · AL–AO: caffeine, erythritol, L-carnitine, lysine |
+| Nutrition → **Foods** | (you edit by hand) A Name · B Category · C Serving · D Grams per serving · E–AI 31 nutrients per 100 g · AM–AP caffeine, erythritol, L-carnitine, lysine per 100 g | — |
 | Nutrition → **Goals / Targets** | (you edit by hand) daily calories, protein, fat, carb max, weight goal; vitamin and mineral targets | — |
-| Nutrition → **Daily Totals** | (read only) | Whole tab: daily sums the charts read |
+| Nutrition → **Daily Totals** | (read only) | Whole tab: daily sums the charts read (AH–AK: caffeine, erythritol, L-carnitine, lysine) |
 | Nutrition → **Daily Body** | A Date · B Weight · D Steps · E Water · F Exercise · G Note | **C** 7-day average · **H** Training min (pulled from the Strength sheet) |
 | Tracker → **Daily Log** | Check-out columns, matched **by header name**; meal columns only if empty | Everything else |
 | Strength → **Workout Log** | A–K, one row per set; Notes end with `#W…` | L–N |

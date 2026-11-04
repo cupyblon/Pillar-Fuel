@@ -76,4 +76,5 @@ Where to look:
 | Date | Version | Automated | Phone checklist | Notes |
 |---|---|---|---|---|
 | 2026-11-03 | v6.1.2 | 18/18 pass | not run yet | |
+| 2026-11-04 | v6.2 | 20/20 pass | not run yet | added caffeine/erythritol check |
 | 2026-11-04 | v6.1.4 | 19/19 pass | **Steps 1–3 pass** (others not run yet) | Wi-Fi + cellular off, logged Monster Zero Ultra, waited, back online → synced. Food Log row 18 has exactly 1 entry with `#L1793793890447kbc3`. |

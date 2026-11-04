@@ -35,6 +35,27 @@ Backend deploys and repo housekeeping. The token and URL themselves are **never*
 - **Same token:** only run `setToken()` when you *want* a new token (for example, if it leaked). Saving the code doesn't need it.
 - **Old deployments:** each URL from a past **New deployment** stays live, running its old code with your current token. Archive them under **Manage deployments → select the old one → Archive**, so an old v6.1.3 copy can't write the Training column again.
 
+## v6.2 "Fine Print" (Nov 4, 2026)
+**Backend: Yes.** Paste the new Code.gs and redeploy with **Manage deployments → Edit → New version** (keeps the URL and token).
+
+**New tracking: caffeine, erythritol, L-carnitine, lysine**
+- **Foods tab, columns AM–AP** (per 100 g):
+  - **Caffeine:** coffee 40 mg and Monster Lo-Carb 30 mg from USDA. Monster Zero Ultra 31.7 mg (150 mg/can) and Diet Dr Pepper 11.5 mg (41 mg/12 oz) from labels.
+  - **Erythritol:** Monster Zero Ultra 0.42 g (2 g/can, label).
+  - **L-carnitine:** midpoint of the cooked range on the Deep Dive tab. Monster contains some, but the label gives no amount, so it adds 0.
+  - **Lysine:** USDA SR28 nutrient 505. Blank where USDA has no value: beef heart, marrow, bone broth, pork belly, Havarti, Greek yogurt, queso fresco.
+- **Food Log, columns AL–AO:** per-entry formulas, same pattern as the other nutrients. They sit after the Note column, so nothing the app writes moved.
+- **Daily Totals, columns AH–AK:** daily sums. The sheet now has history, e.g. Nov 3: 455 mg caffeine, 3 g erythritol, 370 mg L-carnitine, 9.9 g lysine.
+- **App, Nutrients tab:** new **Caffeine, sweetener & amino acids** card.
+  - **Caffeine** against the FDA's 400 mg/day (bar turns red when over).
+  - **Lysine** against 30 mg per kg of body weight (WHO/FAO).
+  - **Erythritol** and **L-carnitine** as amounts.
+  - L-carnitine moved here from Beyond the label, so it's counted once, from the Foods tab.
+- **App, Today:** a ☕ caffeine line appears in Fuel at a glance once you've had any.
+- **App:** after an update, it reloads foods and targets from the sheet once on its own.
+
+**Data fix:** the Monster Zero Ultra Foods row now matches the can label (10 kcal, 380 mg sodium, 4 g net carbs, B3/B5/B6/B12). It was an estimate before.
+
 ## v6.1.4 (Nov 4, 2026)
 **Backend: Yes.** Paste the new Code.gs and redeploy.
 - **Fixed #REF! in Daily Body column H.**
