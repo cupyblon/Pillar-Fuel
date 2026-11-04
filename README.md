@@ -10,3 +10,8 @@ through a private Google Apps Script endpoint.
 
 No data or credentials live in this repo. The script URL and token are stored only on the phone.
 Without them the app runs in demo mode.
+
+## Layouts
+- **Dashboard** (default): Sun Field look. Navy + amber, icon tabs across the top, macro hero, "Fuel at a glance", date bar at the bottom.
+- **Classic**: the original warm layout. Switch with the **▦** button in the header; the choice is remembered.
+- **Auto / Desktop / Phone** (the pill next to ▦): Auto uses columns on screens 900 px and wider.
