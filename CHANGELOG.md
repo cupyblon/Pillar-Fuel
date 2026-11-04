@@ -16,6 +16,25 @@ Newest first. Each version has a number and a short name.
 
 ---
 
+## Deploy & repo log
+
+Backend deploys and repo housekeeping. The token and URL themselves are **never** written here.
+
+| Date | Version | What happened | New token? | New /exec URL? | Repo copy |
+|---|---|---|---|---|---|
+| Nov 3 | v6.0 | First Code.gs + appsscript.json put in the repo root for documentation | – | – | `code.gs`, `appsscript.json` (816e6a7) |
+| Nov 3 | v6.1 | Code.gs pasted + deployed; app Settings updated on phone + PC | Yes | Yes | `code.gs` updated (ff79c8b) |
+| Nov 4 | v6.1.4 | Code.gs pasted; ran a function in the editor (made a new token); deployed; app Settings updated | Yes | Yes | `code.gs` updated (b560b5b) |
+
+**Where the files live:**
+- `apps-script/Code.gs` and `apps-script/appsscript.json` are the working copies. The tests run against these.
+- `code.gs` and `appsscript.json` in the repo root are Fernando's copies of what's actually deployed in Google Apps Script.
+
+**Next time (keeps the same URL and token, so nothing to change in the app):**
+- **Same URL:** after pasting the new Code.gs, go to **Deploy → Manage deployments → pencil (Edit) → Version: New version → Deploy**. **New deployment** is what makes a new URL.
+- **Same token:** only run `setToken()` when you *want* a new token (for example, if it leaked). Saving the code doesn't need it.
+- **Old deployments:** each URL from a past **New deployment** stays live, running its old code with your current token. Archive them under **Manage deployments → select the old one → Archive**, so an old v6.1.3 copy can't write the Training column again.
+
 ## v6.1.4 (Nov 4, 2026)
 **Backend: Yes.** Paste the new Code.gs and redeploy.
 - **Fixed #REF! in Daily Body column H.**
