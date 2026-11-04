@@ -170,6 +170,7 @@ function readGoals_(ss) {
 }
 
 // Foods tab columns E..AI = 31 nutrients per 100 g, in NKEYS order.
+// Extra columns AM..AP (per 100 g): Caffeine mg, Erythritol g, L-Carnitine mg, Lysine mg.
 const NKEYS = ['kcal','p','f','sat','mono','poly','chol','c','ca','fe','mg','ph','k','na','zn','cu','mn','se',
   'vc','b1','b2','b3','b5','b6','fol','cho','b12','va','ve','vd','vk'];
 const NUTRIENT_HEADERS = ['Calories (kcal)','Protein (g)','Fat, total (g)','Saturated fat (g)','Monounsat. fat (g)',
@@ -180,7 +181,8 @@ const NUTRIENT_HEADERS = ['Calories (kcal)','Protein (g)','Fat, total (g)','Satu
 
 function readFoods_(ss) {
   const sh = ss.getSheetByName('Foods');
-  const v = sh.getRange(2, 1, sh.getLastRow() - 1, 35).getValues();
+  const cols = Math.min(42, sh.getLastColumn());   // A..AP when the extra columns exist
+  const v = sh.getRange(2, 1, sh.getLastRow() - 1, cols).getValues();
   const out = [];
   v.forEach(function (r) {
     if (!r[0] || r[3] === '' || isNaN(Number(r[3])) || Number(r[3]) <= 0) return;
@@ -191,6 +193,7 @@ function readFoods_(ss) {
       name: String(r[0]), cat: String(r[1]), serving: String(r[2]),
       g: Number(r[3]),            // grams in one serving
       n: n,                       // 31 nutrients per 100 g (NKEYS order)
+      x: [num_(r[38]), num_(r[39]), num_(r[40]), num_(r[41])],   // caffeine, erythritol, L-carnitine, lysine
       sparse: blanks > 15,        // true = most micronutrients missing
       kcal: n[0], p: n[1], f: n[2], c: n[7]
     });

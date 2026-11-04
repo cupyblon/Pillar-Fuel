@@ -19,7 +19,7 @@ Sheet.prototype={
       setNumberFormat(){ return R; } }; return R; } };
 function makeEnv(){
   const d=s=>{ const [y,m,dd]=s.split('-').map(Number); return new Date(y,m-1,dd); };
-  const foods=[['Foods'],['Egg, whole (chicken)','Eggs','1 large',50,143,12.6,9.5],['Beef, ribeye','Beef','4 oz',113,291,24,21],['Monster Energy Zero Ultra','Drinks','1 can',473,0,0,0]];
+  const foods=[['Foods'],['Egg, whole (chicken)','Eggs','1 large',50,143,12.6,9.5],['Beef, ribeye','Beef','4 oz',113,291,24,21],['Monster Energy Zero Ultra','Drinks','1 can',473,2.11,0,0,0,0,0,0,0.85,...Array(26).fill(''),31.7,0.42,'',0]];
   const nut={ 'Food Log':new Sheet('Food Log',[['Date','Food','Amount','Unit']],100),'Foods':new Sheet('Foods',foods),
     'Goals':new Sheet('Goals',[['Phase','Cut'],['Calories',2540],['Protein',195],['Fat',187],['Net carbs (max)',36],['Water',128],['Steps',8000],['Exercise',30],['Weight goal',195],['Starting weight',235],['Latest weight',233]]),'Targets':new Sheet('Targets',[['x']]),'Daily Totals':new Sheet('Daily Totals',[['Date']]),
     'Daily Body':new Sheet('Daily Body',[['Date','Weight','Avg','Steps','Water','Ex','Note','Training'],[d('2026-11-03'),233,'',8000,64,'','','']]),

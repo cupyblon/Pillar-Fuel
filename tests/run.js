@@ -63,6 +63,10 @@ const APP='file://'+path.join(__dirname,'..','index.html');
   // Server must ignore training even if an old app copy sends it.
   env.post(JSON.stringify({token:'t',action:'saveBody',date:'2026-11-03',training:0,exercise:15}));
   const bad=env.nut['Daily Body'].badWrites||[]; ok(!bad.length, 'F) no writes to formula columns C/H in Daily Body'+(bad.length?': '+bad.join(', '):''));
+  // X) caffeine / erythritol from Foods AM..AP reach the app
+  await pg.evaluate("show('today'); addEntry('Monster Energy Zero Ultra',1,'serving','07:00')"); await pg.waitForTimeout(300);
+  const caf=await pg.evaluate("Math.round(state.T.caf)"), ery=await pg.evaluate("Math.round(state.T.ery*100)/100");
+  ok(caf===150&&ery===1.99, 'X) 1 Monster -> caffeine '+caf+' mg (want 150), erythritol '+ery+' g (want 1.99)');
   // 11 classic date picker covers the title
   await pg.evaluate("show('today')"); const w=await pg.evaluate("$('#datePick').getBoundingClientRect().width"); ok(w>50, '11) classic date tap area width = '+Math.round(w));
   // version shown
