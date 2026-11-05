@@ -67,13 +67,6 @@ const APP='file://'+path.join(__dirname,'..','index.html');
   await pg.evaluate("show('today'); addEntry('Monster Energy Zero Ultra',1,'serving','07:00')"); await pg.waitForTimeout(300);
   const caf=await pg.evaluate("Math.round(state.T.caf)"), ery=await pg.evaluate("Math.round(state.T.ery*100)/100");
   ok(caf===150&&ery===1.99, 'X) 1 Monster -> caffeine '+caf+' mg (want 150), erythritol '+ery+' g (want 1.99)');
-  // D) 🚗 drive day: train/walk items swapped for drive times; workout moves to evening; check-out marked Drove
-  await pg.evaluate("plan={found:true,md:DEMO_PLAN_MD,url:''}; planTab='it'; LS.set('fuel.drive.'+state.date,false); $('#driveBtn').click()");
-  const it=await pg.textContent('#planBody');
-  ok(!/Walk 1|on the train|4:45 AM/.test(it)&&/Leave by car/.test(it)&&/7:30–7:45 PM: Workout/.test(it)&&/hands-free/.test(it), 'D) drive day itinerary: no train/walks/4:45, has drive + evening workout');
-  const dr=await pg.evaluate("LS.get('fuel.outDraft.'+state.date,{})['Train Walk (steps or min)']"); ok(dr==='Drove', '   check-out Train Walk = '+dr);
-  await pg.evaluate("$('#driveBtn').click()"); const back=await pg.textContent('#planBody');
-  ok(/Walk 1/.test(back)&&!await pg.evaluate("LS.get('fuel.outDraft.'+state.date,{})['Train Walk (steps or min)']"), '   tap again: train plan back, Drove cleared');
   // 11 classic date picker covers the title
   await pg.evaluate("show('today')"); const w=await pg.evaluate("$('#datePick').getBoundingClientRect().width"); ok(w>50, '11) classic date tap area width = '+Math.round(w));
   // version shown

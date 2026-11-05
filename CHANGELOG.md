@@ -36,6 +36,10 @@ Backend deploys and repo housekeeping. The token and URL themselves are **never*
 - **Same token:** only run `setToken()` when you *want* a new token (for example, if it leaked). Saving the code doesn't need it.
 - **Old deployments:** each URL from a past **New deployment** stays live, running its old code with your current token. Archive them under **Manage deployments → select the old one → Archive**, so an old v6.1.3 copy can't write the Training column again.
 
+## Rollback to v6.2.1 (Nov 5, 2026)
+**Backend: No.** Production is back to **v6.2.1**. GitHub Pages failed to publish v6.3 (timed out on GitHub's side), and v6.3.1 was blocked behind it, so the live app never left v6.2.1. v6.3 and v6.3.1 are saved on the `beta` branch and **not in production**.
+**New rule:** app changes go to beta first. Fernando tests on his phone, then says "promote" before anything reaches production.
+
 ## v6.3.1 (Nov 5, 2026)
 **Backend: No.**
 - **Updates show up on the next open, with no 10-minute wait.**
