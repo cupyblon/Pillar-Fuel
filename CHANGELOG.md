@@ -51,7 +51,7 @@ Backend deploys and repo housekeeping. The token and URL themselves are **never*
 5. The same files are copied to production, Claude confirms that publish succeeded too, and the beta badge stays on beta only.
 6. **Code.gs changes:** they can't be beta-tested on demo data, so the plan says so up front and Fernando decides before anything is pasted.
 
-**Now in beta:** v6.3.1 (🚗 Drove today button + no-wait updates).
+**Promoted Nov 5, 2026, 10:40:** v6.3.1 (🚗 Drove today button + no-wait updates) moved from beta to production after Fernando's OK.
 
 ## v6.3.1 (Nov 5, 2026)
 **Backend: No.**

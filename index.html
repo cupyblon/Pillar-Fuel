@@ -137,6 +137,8 @@ textarea.f{min-height:64px;resize:vertical}
 .eqb{border:0;background:var(--chip);border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;margin-left:4px}
 .eqb.on{background:var(--chip-on);color:var(--chip-on-ink)}
 .restbar{position:sticky;top:0;z-index:4;background:var(--protein);color:#fff;border-radius:14px;padding:10px 14px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.drv{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;margin-right:8px}
+.drv.on{background:var(--carb);border-color:var(--carb);color:#000}
 .restbar.go{animation:rflash .45s 6 alternate}
 @keyframes rflash{to{background:var(--ok);color:#000}}
 .restbar button{background:rgba(255,255,255,.2);border:0;color:#fff;border-radius:10px;padding:6px 10px;font-weight:700}
@@ -350,7 +352,7 @@ html.dash:not(.desk) main{max-width:640px}
   </div>
 
   <div class="card" id="planCard">
-    <div class="lbl">Daily plan <span id="planMeta"></span></div>
+    <div class="lbl">Daily plan <span><button class="drv hide" id="driveBtn" aria-pressed="false" title="Missed the train? Tap to switch today's plan to driving">🚗 Drove today</button><span id="planMeta"></span></span></div>
     <div class="ptabs" id="ptabs">
       <button data-p="it" class="on">Itinerary</button><button data-p="sq">Squeeze-ins</button><button data-p="sw">Walks</button><button data-p="jr">Journal</button>
     </div>
@@ -643,7 +645,7 @@ function demoDay(date){
 
 /* ======================= STATE ======================= */
 // Bump with every release; matches CHANGELOG.md.
-const APP_VERSION='v6.2.1', APP_VERSION_NAME='Fine Print';
+const APP_VERSION='v6.3.1', APP_VERSION_NAME='Plan B';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const LS={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 let cfg=LS.get('fuel.cfg',{url:'',token:''});
@@ -1172,6 +1174,30 @@ function journalFilled(x){
   const rest=raw.replace(/^\d\)\s*/,'').replace(/^[A-Za-z][A-Za-z /']*:\s*/,'').trim();
   return rest.length>0;
 }
+/* ======================= DRIVE DAY (🚗 button) ======================= */
+// Missed the train and drove in? One tap swaps the train/walk items for drive times and moves the
+// workout to the evening. Only changes what Fuel shows; the Daily Plan doc is untouched.
+const DRIVE_RE=/\b(train|Walk [1-4]|Metra|Lake-Cook|Congress Park|out the door)\b/i;
+const DRIVE_ITEMS=[
+ [375,'**6:15–6:30 AM:** Leave by car, about 40 min; at work around 7:10 *(Physical)*'],
+ [430,'**7:10 AM:** Journal + 16 Questions at your desk, 10 min before work *(Emotional)*'],
+ [960,'**4:00–4:15 PM:** Leave work; 1:10–1:30 drive, home around 5:30. Make the REACH OUT a hands-free call *(Relationships)*'],
+ [1170,'**7:30–7:45 PM:** Workout, 15 min (no 4:45 session today): push-ups 3 sets near failure, farmer carries 3 trips, plank 3x45s *(Physical)*']];
+function driveOn(){ return !!LS.get('fuel.drive.'+state.date,false); }
+function isWeekday(){ const [y,m,d]=state.date.split('-').map(Number); const w=new Date(y,m-1,d).getDay(); return w>0&&w<6; }
+function tmin(t){ const m=String(t).replace(/[*\\]/g,'').match(/^(\d{1,2}):(\d{2})(?:\s*[–-]\s*\d{1,2}:\d{2})?\s*([AP])M/i); if(!m) return null; let h=+m[1]%12; if(/p/i.test(m[3])) h+=12; return h*60+ +m[2]; }
+function driveItinerary(items){
+  const out=items.filter(x=>!DRIVE_RE.test(x.t) && !/^\*\*4:45 AM/.test(x.t));
+  DRIVE_ITEMS.forEach(([m,t])=>{ const i=out.findIndex(x=>{ const v=tmin(x.t); return v!=null&&v>m; }); const it={sub:'',t}; if(i<0) out.push(it); else out.splice(i,0,it); });
+  return out; }
+function updDriveBtn(){ const b=$('#driveBtn'); if(!b) return; const on=driveOn(); b.classList.toggle('hide',!isWeekday()); b.classList.toggle('on',on); b.setAttribute('aria-pressed',String(on)); b.textContent=on?'🚗 Drove today ✓':'🚗 Drove today'; }
+$('#driveBtn').onclick=()=>{ const k='fuel.drive.'+state.date, on=!driveOn(); LS.set(k,on);
+  // check-out: mark the train-walk field "Drove" (only if you haven't typed something else)
+  const dk='fuel.outDraft.'+state.date, d=LS.get(dk,{}), F='Train Walk (steps or min)';
+  if(on&&!d[F]&&!(state.day&&state.day.checkout&&state.day.checkout[F])) d[F]='Drove';
+  if(!on&&d[F]==='Drove') delete d[F];
+  LS.set(dk,d); toast(on?'Drive day: plan updated':'Back to the train plan'); render(); renderPlan(); };
+
 function renderPlan(){
   const body=$('#planBody');
   if(!plan){ body.innerHTML='<div class="empty">Loading…</div>'; $('#planMeta').textContent=''; return; }
@@ -1182,17 +1208,22 @@ function renderPlan(){
     .filter(x=>!/^[*_\\]*Data notes/i.test(x.t));   // housekeeping notes for you, not plan content
   if(planTab==='jr') items=items.filter(journalFilled);
   if(planTab==='sw') items=items.filter(x=>!/^\*?Weather:/.test(x.t) || !x.plain);
+  const drive=driveOn(); updDriveBtn();
+  if(drive&&planTab==='it') items=driveItinerary(items);
+  if(drive&&planTab==='sw'){ const k=items.findIndex(x=>/^WALKS/i.test(x.sub)); items=items.filter(x=>!/^WALKS/i.test(x.sub));
+    const w={sub:'WALKS (drove today)',t:'No commute walks today. Take a 15-min walk at work in daylight (sunrise–sunset above); Deerfield temps are in the weather below.'};
+    if(k<0) items.push(w); else items.splice(k,0,w); }
   if(!items.length){ body.innerHTML=`<div class="empty">${planTab==='jr'?'Nothing written in the journal yet.':'Nothing in this section.'}</div>`; return; }
   let h='', last=null, call='';
   items.forEach(x=>{
-    if(/^Walker call:/i.test(x.t)){ call=x.t; return; }
+    if(/^Walker call:/i.test(x.t)){ if(!drive) call=x.t; return; }
     if(x.sub!==last){ if(last!==null) h+='</ul>'; h+=(x.sub?`<div class="ph">${esc(x.sub)}</div>`:'')+'<ul class="pl">'; last=x.sub; }
     h+=`<li>${mdInline(x.t)}</li>`;
   });
   h+='</ul>';
   if(call) h=`<div class="call">${mdInline(call)}</div>`+h;
   // Itinerary tab: today's REACH OUT person sits on top (from the doc's REACH OUT section).
-  if(planTab==='it'){ const ro=(P.ro||[]).filter(x=>!x.plain); if(ro.length) h=`<div class="ph">Reach out</div><ul class="pl ro">${ro.map(x=>`<li>${mdInline(x.t)}</li>`).join('')}</ul><div class="ph">Itinerary</div>`+h; }
+  if(planTab==='it'){ const ro=(P.ro||[]).filter(x=>!x.plain); if(ro.length&&drive) ro.push({t:'**Drive home:** make it a hands-free call.'}); if(ro.length) h=`<div class="ph">Reach out</div><ul class="pl ro">${ro.map(x=>`<li>${mdInline(x.t)}</li>`).join('')}</ul><div class="ph">Itinerary</div>`+h; }
   body.innerHTML=h;
   if(typeof renderGlance==='function') renderGlance();
 }
@@ -1251,6 +1282,7 @@ function renderGlance(){
   items.push(['🔥','Calories',`${nice2(Math.max(0,g.kcal-(T.kcal||0)))} left`,`${nice2(T.kcal||0)} of ${g.kcal.toLocaleString()}`]);
   items.push(['🥬','Net carbs',(T.c||0)>g.carbs?'over max':`${Math.round(g.carbs-(T.c||0))} g left`,`${r1(T.c||0)} of ${g.carbs} g max`]);
   items.push(['⏱','Fasting',$('#fastVal').textContent,$('#fastSub').textContent]);
+  if(typeof driveOn==='function'&&driveOn()) items.push(['🚗','Drive day','home ~5:30','leave work 4:00–4:15 · workout 7:30 PM']);
   if(plan&&plan.found&&plan.md){ const r=(parsePlan(plan.md).ro||[]).find(x=>/^\*\*Today:/.test(x.t));
     if(r){ const t=r.t.replace(/\\/g,'').replace(/\*\*/g,''); const m=t.match(/^Today:\s*([^,(]+?)\s*(\([^)]*\))?,\s*([^.]+)/);
       items.push(['📞','Reach out',m?m[1].trim():t.slice(7,40),m?m[3].trim():'']); } }
@@ -1280,7 +1312,14 @@ $('#prevDay').onclick=()=>{ state.date=shift(state.date,-1); load(); };
 $('#nextDay').onclick=()=>{ if(state.date<todayKey()){ state.date=shift(state.date,1); load(); } };
 window.addEventListener('online',flush);
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) flush(); });
-if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
+// Updates: check for a new version on every open/return to the app; when one is installed, reload once.
+if('serviceWorker' in navigator && location.protocol==='https:'){
+  const hadSW=!!navigator.serviceWorker.controller; let reloaded=false;
+  navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(reg=>{
+    document.addEventListener('visibilitychange',()=>{ if(!document.hidden) reg.update().catch(()=>{}); });
+  }).catch(()=>{});
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(hadSW&&!reloaded){ reloaded=true; location.reload(); } });
+}
 load(); flush(); startTick();
 </script>
 </body>
