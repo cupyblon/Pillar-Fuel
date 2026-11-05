@@ -118,6 +118,8 @@ Three spreadsheets and a folder. Column letters matter, because the backend writ
 
 **Workout:** each session gets an ID (`W…`). Saving again **replaces** that session's rows instead of duplicating them.
 
+**Drove instead of the train:** tap **🚗 Drove today** on the plan card. Fuel swaps the train and walk items for drive times and an evening workout, and marks check-out "Train Walk: Drove". The doc itself isn't changed.
+
 **Daily Plan card:** the backend finds that date's doc in the Drive folder, skips anything in the trash, and exports it as text. The app shows the Itinerary, Squeeze-ins, Walks/Weather and Journal sections. In this setup, a separate scheduled Claude task writes those docs each morning, but any doc with the right name works.
 
 ---

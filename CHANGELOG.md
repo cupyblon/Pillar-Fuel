@@ -36,6 +36,22 @@ Backend deploys and repo housekeeping. The token and URL themselves are **never*
 - **Same token:** only run `setToken()` when you *want* a new token (for example, if it leaked). Saving the code doesn't need it.
 - **Old deployments:** each URL from a past **New deployment** stays live, running its old code with your current token. Archive them under **Manage deployments → select the old one → Archive**, so an old v6.1.3 copy can't write the Training column again.
 
+## v6.3 "Plan B" (Nov 5, 2026)
+**Backend: No.**
+- **New 🚗 Drove today button** on the Daily Plan card (weekdays only). For the mornings you miss the train and drive in. One tap, remembered for that date; tap again to undo. It only changes what Fuel shows; the Daily Plan doc is untouched.
+  - **Itinerary:**
+    - **Removed:** the 4:45 workout, Walks 1–4, and the train/Metra/Lake-Cook/Congress Park items.
+    - **Added:**
+      - 6:15–6:30 AM leave by car (~40 min, at work ~7:10)
+      - 7:10 AM journal at your desk
+      - 4:00–4:15 PM leave work (1:10–1:30 drive, home ~5:30)
+      - 7:30–7:45 PM 15-min workout (push-ups, farmer carries, plank)
+  - **Reach out:** adds "Drive home: make it a hands-free call."
+  - **Walks tab:** the four commute walks become one line, a 15-min daylight walk at work. The walker call is hidden.
+  - **Fuel at a glance:** a 🚗 line (home ~5:30, workout 7:30 PM).
+  - **Check-out:** "Train Walk" is filled with **Drove** (unless you already typed something), so the Daily Log shows a drive day instead of a missing walk.
+- **Tests:** 3 new checks (drive itinerary, Drove at check-out, undo). 23 total.
+
 ## v6.2.1 (Nov 4, 2026)
 **Backend: No.**
 - **Daily Plan card, Itinerary tab:** today's **REACH OUT** person, opener and upcoming birthdays now show on top. They come from the new REACH OUT section of the Daily Plan doc.
