@@ -40,6 +40,19 @@ Backend deploys and repo housekeeping. The token and URL themselves are **never*
 **Backend: No.** Production is back to **v6.2.1**. GitHub Pages failed to publish v6.3 (timed out on GitHub's side), and v6.3.1 was blocked behind it, so the live app never left v6.2.1. v6.3 and v6.3.1 are saved on the `beta` branch and **not in production**.
 **New rule:** app changes go to beta first. Fernando tests on his phone, then says "promote" before anything reaches production.
 
+**Release flow (from Nov 5, 2026):**
+1. A change is built and the automated tests pass.
+2. It's published to **beta**: https://cupyblon.github.io/Pillar-Fuel/beta/
+   - Demo data only. It never talks to the sheets.
+   - It has its own settings and offline queue, so it can't touch production.
+   - It shows a red **BETA · demo** badge.
+3. Claude confirms GitHub's publish **succeeded** before telling Fernando it's ready.
+4. Fernando tests it on his phone and says **"promote"**.
+5. The same files are copied to production, Claude confirms that publish succeeded too, and the beta badge stays on beta only.
+6. **Code.gs changes:** they can't be beta-tested on demo data, so the plan says so up front and Fernando decides before anything is pasted.
+
+**Now in beta:** v6.3.1 (🚗 Drove today button + no-wait updates).
+
 ## v6.3.1 (Nov 5, 2026)
 **Backend: No.**
 - **Updates show up on the next open, with no 10-minute wait.**

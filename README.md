@@ -8,6 +8,7 @@ through a private Google Apps Script endpoint.
 - Backend: `apps-script/Code.gs` (deploy as a web app, protected by a token)
 - How it's all connected (shareable, with build-your-own steps): see `HOW-IT-WORKS.md`
 - Setup: see `SETUP.md`
+- **Beta (demo data only): https://cupyblon.github.io/Pillar-Fuel/beta/** — every app change lands here first; production changes only after "promote"
 - Testing: see `TESTING.md` (automated tests in `tests/` + a 10-minute phone checklist)
 - Version history: see `CHANGELOG.md` (current: **v6.2.1**; v6.3.x on the `beta` branch) · Live: https://cupyblon.github.io/Pillar-Fuel/
 
