@@ -645,7 +645,7 @@ function demoDay(date){
 
 /* ======================= STATE ======================= */
 // Bump with every release; matches CHANGELOG.md.
-const APP_VERSION='v6.3', APP_VERSION_NAME='Plan B';
+const APP_VERSION='v6.3.1', APP_VERSION_NAME='Plan B';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const LS={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 let cfg=LS.get('fuel.cfg',{url:'',token:''});
@@ -1312,7 +1312,14 @@ $('#prevDay').onclick=()=>{ state.date=shift(state.date,-1); load(); };
 $('#nextDay').onclick=()=>{ if(state.date<todayKey()){ state.date=shift(state.date,1); load(); } };
 window.addEventListener('online',flush);
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) flush(); });
-if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
+// Updates: check for a new version on every open/return to the app; when one is installed, reload once.
+if('serviceWorker' in navigator && location.protocol==='https:'){
+  const hadSW=!!navigator.serviceWorker.controller; let reloaded=false;
+  navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(reg=>{
+    document.addEventListener('visibilitychange',()=>{ if(!document.hidden) reg.update().catch(()=>{}); });
+  }).catch(()=>{});
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(hadSW&&!reloaded){ reloaded=true; location.reload(); } });
+}
 load(); flush(); startTick();
 </script>
 </body>

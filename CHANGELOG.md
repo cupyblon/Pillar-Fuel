@@ -36,6 +36,14 @@ Backend deploys and repo housekeeping. The token and URL themselves are **never*
 - **Same token:** only run `setToken()` when you *want* a new token (for example, if it leaked). Saving the code doesn't need it.
 - **Old deployments:** each URL from a past **New deployment** stays live, running its old code with your current token. Archive them under **Manage deployments → select the old one → Archive**, so an old v6.1.3 copy can't write the Training column again.
 
+## v6.3.1 (Nov 5, 2026)
+**Backend: No.**
+- **Updates show up on the next open, with no 10-minute wait.**
+  - **Offline copy:** the app now asks GitHub every time whether a file changed, instead of trusting the browser's 10-minute cache.
+  - **Version check:** the app checks for a new version whenever you open or return to it.
+  - **Reload:** when a new version installs, the app reloads itself once.
+- **One-time catch:** this release itself still arrives the old way (one more close/reopen). Later releases follow the new rule.
+
 ## v6.3 "Plan B" (Nov 5, 2026)
 **Backend: No.**
 - **New 🚗 Drove today button** on the Daily Plan card (weekdays only). For the mornings you miss the train and drive in. One tap, remembered for that date; tap again to undo. It only changes what Fuel shows; the Daily Plan doc is untouched.
