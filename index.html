@@ -740,6 +740,7 @@ async function flush(){
         if(r.error){ skipped.push(qLabel(it)+': '+r.error);
           if(it.action==='addFood'&&state.day&&it.date===state.date) state.day.entries=state.day.entries.filter(x=>x._local!==it._local); }
         else if(it.action==='addFood'&&state.day){ const e=state.day.entries.find(x=>x._local===it._local); if(e){ e.row=r.row; e.id=it._local; delete e._local; } }
+        else if(it.action==='saveJournal'){ try{localStorage.removeItem('fuel.plan.'+it.date);}catch(e){} if(it.date===state.date) loadPlan(); }
         const k=queue.indexOf(it); if(k>=0) queue.splice(k,1); }
       LS.set('fuel.queue',queue); if(state.day) LS.set('fuel.day.'+state.date,state.day);
       if(stop) throw new Error(stop); }
@@ -1331,10 +1332,10 @@ $('#saveJour').onclick=async()=>{
   if(!payload){ toast('Nothing new to save'); return; }
   if(!live()){ toast('Saved (demo — not sent)'); jrT={}; LS.set('fuel.jrDraft.'+state.date,{}); renderJour(); return; }
   enqueue({action:'saveJournal',date:state.date,...payload});
-  jrT={}; LS.set('fuel.jrDraft.'+state.date,{});
+  // Keep jrT values so fields stay visible while plan reloads in background.
+  // flush() will bust fuel.plan.{date} and call loadPlan() on success.
   toast('Journal queued');
   $('#jourNote').textContent='Saving…';
-  renderJour();
 };
 
 /* ======================= DRIVE DAY (🚗 button) ======================= */
