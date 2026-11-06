@@ -26,6 +26,7 @@ Backend deploys and repo housekeeping. The token and URL themselves are **never*
 | Nov 3 | v6.1 | Code.gs pasted + deployed; app Settings updated on phone + PC | Yes | Yes | `code.gs` updated (ff79c8b) |
 | Nov 4 | v6.1.4 | Code.gs pasted; ran a function in the editor (made a new token); deployed; app Settings updated | Yes | Yes | `code.gs` updated (b560b5b) |
 | Nov 4 | v6.2 | Code.gs pasted; new deployment "v6.2 Fine Print" (Version 4, 5:22 PM); all 3 older deployments archived. App Settings need the new URL | Not stated | Yes | `code.gs` updated (944cc23) |
+| Nov 6 | v6.4 | **Paste Code.gs + redeploy (new version, same URL).** Re-auth required (Documents scope added). App updates on next open. | No | No | `apps-script/Code.gs` + `apps-script/appsscript.json` updated |
 
 **Where the files live:**
 - `apps-script/Code.gs` and `apps-script/appsscript.json` are the working copies. The tests run against these.
@@ -51,7 +52,28 @@ Backend deploys and repo housekeeping. The token and URL themselves are **never*
 5. The same files are copied to production, Claude confirms that publish succeeded too, and the beta badge stays on beta only.
 6. **Code.gs changes:** they can't be beta-tested on demo data, so the plan says so up front and Fernando decides before anything is pasted.
 
-**Promoted Nov 5, 2026, 10:40:** v6.3.1 (🚗 Drove today button + no-wait updates) moved from beta to production after Fernando's OK.
+**Promoted Nov 6, 2026:** v6.4 "Morning Pages" moved from beta to production after Fernando's OK.
+
+## v6.4 "Morning Pages" (Nov 6, 2026)
+**Backend: Yes.** Paste the new `apps-script/Code.gs` and redeploy: **Deploy → Manage deployments → pencil → Version: New version → Deploy**.
+Also: on first open after the backend deploy, Google will ask you to re-authorize. That's expected — v6.4 adds the **Documents** permission so the journal can write to your Daily Plan docs.
+
+- **New 📝 Journal tab** (after Today in the nav).
+  - 7 cards: 16 Questions pick (1–16), Grateful 1–3, Reflect (Went well / Didn't go well), To Be · To Have/Feel, Top 3 Personal, Top 3 Work, Top 3 Honey-do / Bills.
+  - **Saves to two places at once:**
+    - Your Daily Plan doc — fills in the MORNING JOURNAL lines for that date (touched fields only; never deletes anything).
+    - Pillars Tracker Daily Log — Grateful, To Be / Have / Feel, and Top 3 columns.
+  - Draft is kept as you type. If you close the app mid-entry and come back, your work is still there.
+  - No doc for that date → tracker-only save + a note in the app.
+  - **Past-day fill:** open a past date and the Journal tab pre-fills from whatever is already in the doc.
+- **Train tab — past-day read-only view.** Open a past date in the Train tab and you'll see a grouped table of the sets you logged that day (Exercise → Set / Reps / lb / Time). Entry controls are hidden; this is display only.
+- **Backend changes (Code.gs):**
+  - `saveJournal` action: writes the doc + tracker, returns `{ok, row, msgs}`.
+  - `writeJournalToDoc_`: walks MORNING JOURNAL → DAILY LOG in the doc, replaces text in-place (preserves formatting).
+  - `readSets_` / `sets` GET action: read-only fetch of workout sets for a given date.
+  - `testJournal()` helper you can run from the Apps Script editor to smoke-test the doc write against today's doc without touching the sheet.
+  - `appsscript.json`: added `https://www.googleapis.com/auth/documents` OAuth scope.
+- **Tests:** 30 checks, all pass (7 new: J1–J4 journal writes, K1–K3 sets reads).
 
 ## v6.3.1 (Nov 5, 2026)
 **Backend: No.**
