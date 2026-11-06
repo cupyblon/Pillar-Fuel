@@ -15,7 +15,8 @@
  *    (Training min, pulled from Strength > Sessions) are formulas that fill their whole column;
  *    typing into any cell below them breaks the column with #REF!.
  *  - Pillars Tracker > Daily Log    : check-out columns, matched by header name.
- *  READ ONLY: Daily folder "YYYY-MM-DD Daily Plan" docs (GET ?action=plan&date=...).
+ *  - Daily folder "YYYY-MM-DD Daily Plan" docs: READ via GET ?action=plan&date=...
+ *                                                WRITE via POST saveJournal (MORNING JOURNAL section only).
  *  - Strength Training > Workout Log: A-K, one row per set (L-N are formulas);
  *                                     Notes end with "#W…" so re-saving a workout replaces it.
  *  - Strength Training > Sessions   : A-D, one row per workout day (E-G are formulas).
