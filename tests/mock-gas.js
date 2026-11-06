@@ -24,8 +24,8 @@ function makeEnv(){
     'Goals':new Sheet('Goals',[['Phase','Cut'],['Calories',2540],['Protein',195],['Fat',187],['Net carbs (max)',36],['Water',128],['Steps',8000],['Exercise',30],['Weight goal',195],['Starting weight',235],['Latest weight',233]]),'Targets':new Sheet('Targets',[['x']]),'Daily Totals':new Sheet('Daily Totals',[['Date']]),
     'Daily Body':new Sheet('Daily Body',[['Date','Weight','Avg','Steps','Water','Ex','Note','Training'],[d('2026-11-03'),233,'',8000,64,'','','']]),
     'Deep Dive':new Sheet('Deep Dive',[[''],[''],['h']]) };
-  const head=['Date','Wins','Misses','Breakfast','Lunch','Dinner','Snacks / Drinks','Monsters #','Exercise Types','Exercise Min','Sweat? (Y/N)','Woke','Bed'];
-  const trk={ 'Daily Log':new Sheet('Daily Log',[head,[d('2026-11-03'),'','','','','','',2,'','','','6:00 AM','']]) };
+  const head=['Date','Wins','Misses','Breakfast','Lunch','Dinner','Snacks / Drinks','Monsters #','Exercise Types','Exercise Min','Sweat? (Y/N)','Woke','Bed','Grateful','To Be / Have / Feel','Top 3'];
+  const trk={ 'Daily Log':new Sheet('Daily Log',[head,[d('2026-11-03'),'','','','','','',2,'','','','6:00 AM','','','','']]) };
   nut['Daily Body'].formulaCols=[3,8];   // C and H are column-filling formulas in the real sheet
   const str={ 'Workout Log':new Sheet('Workout Log',[['Date','Type','Exercise','Set','Reps','Wt','Time','Dist','Rest','Effort','Notes']],100),
     'Sessions':new Sheet('Sessions',[['Date','Type','Min','Note']]),'Exercises':new Sheet('Exercises',[['n','g','e']]) };
@@ -36,10 +36,43 @@ function makeEnv(){
     SpreadsheetApp:{ openById(id){ opens.n++; const b=books[id]; return { getSheetByName:n=>b[n]||null }; } },
     PropertiesService:{ getScriptProperties:()=>({ getProperty:k=>props[k]??null, setProperty:(k,v)=>{props[k]=v;} }) },
     LockService:{ getScriptLock:()=>({ waitLock(){}, releaseLock(){} }) },
-    CacheService:{ getScriptCache:()=>({ get:()=>null, put(){} }) },
+    CacheService:{ getScriptCache:()=>({ get:k=>null, put(){}, remove(){} }) },
     ContentService:{ MimeType:{JSON:'json'}, createTextOutput:t=>({ t, setMimeType(){ return this; } }) },
     Utilities:{ formatDate(dt,tz,f){ const p=n=>String(n).padStart(2,'0'); return f==='HH:mm'?p(dt.getHours())+':'+p(dt.getMinutes()):dt.getFullYear()+'-'+p(dt.getMonth()+1)+'-'+p(dt.getDate()); }, getUuid:()=>'x' },
-    DriveApp:{ getFolderById:()=>({ getFilesByName(n){ const l=files.filter(f=>f.name===n); let i=0; return { hasNext:()=>i<l.length, next:()=>{ const f=l[i++]; return { getId:()=>f.id, isTrashed:()=>f.trashed, getLastUpdated:()=>f.upd, getUrl:()=>'https://docs.google.com/document/d/'+f.id }; } }; } }) },
+    DriveApp:{ getFolderById:()=>({ getFilesByName(n){ const l=files.filter(f=>f.name===n&&!f.trashed); let i=0; return { hasNext:()=>i<l.length, next:()=>{ const f=l[i++]; return { getId:()=>f.id, isTrashed:()=>false, getLastUpdated:()=>f.upd, getUrl:()=>'https://docs.google.com/document/d/'+f.id }; } }; } }) },
+    DocumentApp:{ ElementType:{PARAGRAPH:'PARAGRAPH',LIST_ITEM:'LIST_ITEM',HEADING:'HEADING'},
+      ParagraphHeading:{NORMAL:'NORMAL',HEADING1:'HEADING_1',HEADING2:'HEADING_2'},
+      openById(id){
+      // Minimal doc mock with MORNING JOURNAL section
+      const paras=[
+        {type:'PARAGRAPH',text:'MORNING JOURNAL',heading:'HEADING_2'},
+        {type:'PARAGRAPH',text:'GRATEFUL (3)',heading:'NORMAL'},
+        {type:'LIST_ITEM',text:'1) ',heading:'NORMAL'},
+        {type:'LIST_ITEM',text:'2) ',heading:'NORMAL'},
+        {type:'LIST_ITEM',text:'3) ',heading:'NORMAL'},
+        {type:'PARAGRAPH',text:'TO BE (love, support, build)',heading:'NORMAL'},
+        {type:'LIST_ITEM',text:'Today I want to be: ',heading:'NORMAL'},
+        {type:'LIST_ITEM',text:'Today I want to: ',heading:'NORMAL'},
+        {type:'PARAGRAPH',text:'DAILY LOG',heading:'HEADING_2'},
+      ];
+      const Body={
+        getNumChildren(){ return paras.length; },
+        getChild(i){ const p=paras[i];
+          return {
+            getType(){ return p.type==='LIST_ITEM'?'LIST_ITEM':'PARAGRAPH'; },
+            asParagraph(){
+              return { getHeading(){ return p.heading; },
+                getText(){ return p.text; },
+                editAsText(){ return { setText(v){ p.text=v; } }; } };
+            },
+            asListItem(){
+              return { getHeading(){ return 'NORMAL'; },
+                getText(){ return p.text; },
+                editAsText(){ return { setText(v){ p.text=v; } }; } };
+            } }; }
+      };
+      return { getBody(){ return Body; }, saveAndClose(){}, getId(){ return id; } };
+    } },
     UrlFetchApp:{ fetch:u=>({ getResponseCode:()=>200, getContentText:()=>'# doc '+(u.includes('GOOD')?'GOOD':'OLD') }) },
     ScriptApp:{ getOAuthToken:()=>'x' }, Logger:{log(){}} };
   vm.createContext(ctx); vm.runInContext(fs.readFileSync(CODE,'utf8'),ctx);

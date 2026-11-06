@@ -78,6 +78,29 @@ const APP='file://'+path.join(__dirname,'..','index.html');
   await pg.evaluate("show('today')"); const w=await pg.evaluate("$('#datePick').getBoundingClientRect().width"); ok(w>50, '11) classic date tap area width = '+Math.round(w));
   // version shown
   ok(/v\d+\.\d+/.test(await pg.textContent('#verNote')), '   version in Settings: '+(await pg.textContent('#verNote')).trim());
+  // J) saveJournal: writes to Daily Log headers Grateful / To Be / Top 3
+  const jb={token:'t',action:'saveJournal',date:'2026-11-03',g1:'Health',g2:'Family',g3:'Work',tobe:'present',tohave:'strong',p1:'Task A',p2:'Task B',p3:'Task C',w1:'',w2:'',w3:'',h1:'',h2:'',h3:'',q:7,well:'Good run',didnt:'Skipped reading'};
+  const jr=env.post(JSON.stringify(jb));
+  ok(jr.ok, 'J) saveJournal ok = '+jr.ok+(jr.msgs&&jr.msgs.length?' msgs: '+jr.msgs.join('; '):''));
+  const dl2=env.trk['Daily Log'].d[1];
+  const gratIdx=env.trk['Daily Log'].d[0].indexOf('Grateful');
+  const tobeIdx=env.trk['Daily Log'].d[0].indexOf('To Be / Have / Feel');
+  const top3Idx=env.trk['Daily Log'].d[0].indexOf('Top 3');
+  ok(gratIdx>0 && /Health/.test(String(dl2[gratIdx])), 'J1) Grateful col has "Health": col '+gratIdx+' = '+dl2[gratIdx]);
+  ok(tobeIdx>0 && /present/.test(String(dl2[tobeIdx])), 'J2) ToBe col has "present": col '+tobeIdx+' = '+dl2[tobeIdx]);
+  ok(top3Idx>0 && /Task A/.test(String(dl2[top3Idx])), 'J3) Top3 col has "Task A": col '+top3Idx+' = '+dl2[top3Idx]);
+  // J4) no error msgs (doc write succeeded in mock)
+  ok(Array.isArray(jr.msgs) && jr.msgs.every(m=>!/not found/i.test(m)), 'J4) no "not found" msgs: '+JSON.stringify(jr.msgs));
+  // K) sets action: returns sets for a date that has workout log rows
+  // Plant a row in Workout Log first
+  env.str['Workout Log'].d.splice(1,0,[new Date(2026,10,3),'Weights','Curl',1,12,30,'','','',7,'']);
+  const sr=env.get({token:'t',action:'sets',date:'2026-11-03'});
+  ok(sr.date==='2026-11-03', 'K) sets date = '+sr.date);
+  ok(Array.isArray(sr.sets)&&sr.sets.length>=1, 'K1) sets has rows: '+sr.sets.length);
+  ok(sr.sets[0].exercise==='Curl', 'K2) first set exercise = '+sr.sets[0].exercise);
+  // K3) sets for a date with no rows returns empty array
+  const sr2=env.get({token:'t',action:'sets',date:'2025-01-01'});
+  ok(Array.isArray(sr2.sets)&&sr2.sets.length===0, 'K3) no sets for unknown date: '+sr2.sets.length);
   await b.close();
   console.log(fails?`\n${fails} FAILED`:'\nALL PASSED'); process.exit(fails?1:0);
 })();

@@ -43,6 +43,18 @@ const CHECKOUT_FIELDS = [
 // you typed in a daily doc / what the Weekly Sync already wrote.
 const FILL_ONLY_IF_EMPTY = ['Breakfast', 'Lunch', 'Dinner', 'Snacks / Drinks'];
 
+// Morning Journal label keywords (match against trimmed-uppercase paragraph text).
+const JOURNAL_LABELS = {
+  Q:        '16 QUESTIONS',
+  GRATEFUL: 'GRATEFUL',
+  REFLECT:  'REFLECT',
+  TOBE:     'TO BE',
+  TOHAVE:   'TO HAVE',
+  PERSONAL: 'TOP 3 PERSONAL',
+  WORK:     'TOP 3 WORK',
+  HONEYDO:  'TOP 3 HONEY'
+};
+
 /* ---------- one-time setup: run this from the editor ---------- */
 function setToken() {
   const token = Utilities.getUuid().replace(/-/g, '').slice(0, 20);
@@ -59,6 +71,7 @@ function doGet(e) {
     if ((p.action || 'bootstrap') === 'bootstrap') return bootstrap_(date);
     if (p.action === 'day') return day_(date);
     if (p.action === 'plan') return readPlan_(date);
+    if (p.action === 'sets') return readSets_(date);
     throw new Error('Unknown action');
   });
 }
@@ -76,6 +89,7 @@ function doPost(e) {
         case 'saveBody':     return saveBody_(b);
         case 'saveCheckout': return saveCheckout_(b);
         case 'addSets':      return addSets_(b);
+        case 'saveJournal':  return saveJournal_(b);
         case 'exercises':    return { exercises: readExercises_() };
         case 'batch':        return { results: b.items.map(function (it) {
                                it.token = b.token; return dispatch_(it); }) };
@@ -93,6 +107,7 @@ function dispatch_(b) {
     if (b.action === 'saveBody') return saveBody_(b);
     if (b.action === 'saveCheckout') return saveCheckout_(b);
     if (b.action === 'addSets') return addSets_(b);
+    if (b.action === 'saveJournal') return saveJournal_(b);
     return { error: 'Unknown action' };
   } catch (err) { return { error: String(err.message || err) }; }
 }
@@ -353,6 +368,237 @@ function saveCheckout_(b) {
     written.push(h);
   });
   return { ok: true, row: r, written: written };
+}
+
+// POST {action:'saveJournal', date, q?, g1?, g2?, g3?, well?, didnt?, tobe?, tohave?,
+//       p1?, p2?, p3?, w1?, w2?, w3?, h1?, h2?, h3?}
+// Only fields present (not undefined) are written. Idempotent — replaces, never appends.
+// Writes to: (a) MORNING JOURNAL section of the date's Daily Plan doc,
+//            (b) Daily Log columns Grateful / To Be / Have / Feel / Top 3 by header name.
+// If the doc doesn't exist, writes the tracker only and returns a warning message.
+function saveJournal_(b) {
+  const msgs = [];
+  const date = b.date || todayKey_();
+
+  // ── 1. Daily Log (Pillars Tracker) ───────────────────────────────────────
+  const sh   = SpreadsheetApp.openById(TRACKER_ID).getSheetByName('Daily Log');
+  const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  let r = findDateRow_(sh, date);
+  if (!r) {
+    r = lastDataRow_(sh, 1) + 1;
+    sh.getRange(r, 1).setValue(dateObj_(date)).setNumberFormat('yyyy-mm-dd');
+  }
+  const setCol_ = function (header, val) {
+    if (val === undefined || val === null || val === '') return;
+    const i = head.indexOf(header);
+    if (i >= 0) sh.getRange(r, i + 1).setValue(val);
+    else msgs.push('Column "' + header + '" not found — skipped tracker write.');
+  };
+
+  const gParts = [b.g1, b.g2, b.g3].filter(Boolean);
+  if (gParts.length) setCol_('Grateful', gParts.join('; '));
+
+  const toParts = [];
+  if (b.tobe)   toParts.push('TO BE: '       + b.tobe);
+  if (b.tohave) toParts.push('TO HAVE/FEEL: ' + b.tohave);
+  if (toParts.length) setCol_('To Be / Have / Feel', toParts.join('\n'));
+
+  const pItems = [b.p1, b.p2, b.p3].filter(Boolean);
+  const wItems = [b.w1, b.w2, b.w3].filter(Boolean);
+  const hItems = [b.h1, b.h2, b.h3].filter(Boolean);
+  const top3Parts = [];
+  if (pItems.length) top3Parts.push(pItems.join(', '));
+  if (wItems.length) top3Parts.push('Work: '     + wItems.join(', '));
+  if (hItems.length) top3Parts.push('Honey-do: ' + hItems.join(', '));
+  if (top3Parts.length) setCol_('Top 3', top3Parts.join(' | '));
+
+  // ── 2. Daily Plan doc ─────────────────────────────────────────────────────
+  const docRes = writeJournalToDoc_(b, date);
+  if (docRes.msg)   msgs.push(docRes.msg);
+  if (!docRes.found) msgs.push('No Daily Plan doc for ' + date + ' — tracker updated only.');
+
+  // Bust the plan cache so the next GET re-reads the updated doc.
+  if (docRes.found) {
+    try { CacheService.getScriptCache().remove('plan_' + date); } catch (e) {}
+  }
+
+  return { ok: true, row: r, msgs: msgs };
+}
+
+// Open the date's Daily Plan doc and rewrite the MORNING JOURNAL section.
+// Returns {found: bool, msg?: string}.
+function writeJournalToDoc_(b, date) {
+  const it = DriveApp.getFolderById(DAILY_FOLDER).getFilesByName(date + ' Daily Plan');
+  let f = null;
+  while (it.hasNext()) {
+    const x = it.next();
+    if (x.isTrashed()) continue;
+    if (!f || x.getLastUpdated() > f.getLastUpdated()) f = x;
+  }
+  if (!f) return { found: false };
+
+  const doc  = DocumentApp.openById(f.getId());
+  const body = doc.getBody();
+  const n    = body.getNumChildren();
+  const P    = DocumentApp.ElementType.PARAGRAPH;
+  const LI   = DocumentApp.ElementType.LIST_ITEM;
+  const NH   = DocumentApp.ParagraphHeading.NORMAL;
+
+  // Find boundaries: MORNING JOURNAL heading → DAILY LOG heading.
+  let start = -1, end = n;
+  for (let i = 0; i < n; i++) {
+    const el = body.getChild(i);
+    if (el.getType() !== P) continue;
+    const para = el.asParagraph();
+    if (para.getHeading() === NH) continue;
+    const up = para.getText().trim().toUpperCase();
+    if (up.indexOf('MORNING JOURNAL') >= 0 && start < 0) { start = i; continue; }
+    if (start >= 0 && up.indexOf('DAILY LOG') >= 0) { end = i; break; }
+  }
+  if (start < 0) return { found: true, msg: 'MORNING JOURNAL heading not found in doc.' };
+
+  // Walk section: track current label and item index within that label.
+  let label = '', itemIdx = 0;
+
+  for (let i = start + 1; i < end; i++) {
+    const el   = body.getChild(i);
+    const type = el.getType();
+    if (type !== P && type !== LI) continue;
+
+    const elem    = type === P ? el.asParagraph() : el.asListItem();
+    const txt     = elem.getText();
+    const trimmed = txt.trim();
+    if (!trimmed) continue;   // empty separator
+
+    // Label paragraphs are PARAGRAPH type with NORMAL heading.
+    if (type === P) {
+      if (elem.getHeading() !== NH) continue;
+      const up = trimmed.toUpperCase();
+      let matched = '';
+      for (const k in JOURNAL_LABELS) {
+        if (up.indexOf(JOURNAL_LABELS[k]) >= 0) { matched = k; break; }
+      }
+      if (matched) { label = matched; itemIdx = 0; }
+      // Whether matched or not, it's a label/heading line — not an item.
+      continue;
+    }
+
+    // LIST_ITEM (or non-label PARAGRAPH acting as an item).
+    if (!label) continue;
+
+    if (label === 'Q') {
+      // Append "· picked Q{n}" to the first item line; never to the label itself.
+      if (itemIdx === 0 && b.q !== undefined && b.q !== null && b.q !== '') {
+        const base = txt.replace(/\s*·\s*picked\s+Q\d+.*$/i, '').trimEnd();
+        elem.editAsText().setText(base + ' · picked Q' + b.q);
+      }
+      itemIdx++;
+
+    } else if (label === 'GRATEFUL') {
+      itemIdx++;
+      const val = [b.g1, b.g2, b.g3][itemIdx - 1];
+      if (val !== undefined && val !== null && val !== '') {
+        elem.editAsText().setText(itemIdx + ') ' + val);
+      }
+
+    } else if (label === 'REFLECT') {
+      if (/went\s+well/i.test(trimmed)) {
+        if (b.well) elem.editAsText().setText('Went well: ' + b.well);
+      } else if (/didn.?t/i.test(trimmed)) {
+        if (b.didnt) elem.editAsText().setText("Didn't: " + b.didnt);
+      }
+      itemIdx++;
+
+    } else if (label === 'TOBE') {
+      if (itemIdx === 0 && b.tobe) {
+        elem.editAsText().setText('Today I want to be: ' + b.tobe);
+      }
+      itemIdx++;
+
+    } else if (label === 'TOHAVE') {
+      if (itemIdx === 0 && b.tohave) {
+        // Preserve the prefix "Today I want to:" (with or without space).
+        elem.editAsText().setText('Today I want to: ' + b.tohave);
+      }
+      itemIdx++;
+
+    } else if (label === 'PERSONAL') {
+      itemIdx++;
+      if (itemIdx <= 3) {
+        const val = [b.p1, b.p2, b.p3][itemIdx - 1];
+        if (val !== undefined && val !== null && val !== '') {
+          elem.editAsText().setText(itemIdx + ') ' + val);
+        }
+      }
+
+    } else if (label === 'WORK') {
+      itemIdx++;
+      if (itemIdx <= 3) {
+        const val = [b.w1, b.w2, b.w3][itemIdx - 1];
+        if (val !== undefined && val !== null && val !== '') {
+          elem.editAsText().setText(itemIdx + ') ' + val);
+        }
+      }
+
+    } else if (label === 'HONEYDO') {
+      itemIdx++;
+      if (itemIdx <= 3) {
+        const val = [b.h1, b.h2, b.h3][itemIdx - 1];
+        if (val !== undefined && val !== null && val !== '') {
+          elem.editAsText().setText(itemIdx + ') ' + val);
+        }
+      }
+    }
+  }
+
+  doc.saveAndClose();
+  return { found: true };
+}
+
+// GET ?action=sets&date=YYYY-MM-DD  — read-only; returns that day's workout sets.
+function readSets_(date) {
+  const ss  = SpreadsheetApp.openById(STRENGTH_ID);
+  const log = ss.getSheetByName('Workout Log');
+  const last = log.getLastRow();
+  if (last < 2) return { date: date, sets: [] };
+  const rows = log.getRange(2, 1, last - 1, 11).getValues();
+  const sets = [];
+  rows.forEach(function (row) {
+    if (!row[0] || key_(row[0]) !== date) return;
+    sets.push({
+      sessionType: row[1], exercise: row[2], set: row[3],
+      reps: row[4], weight: row[5], time: row[6],
+      distance: row[7], rest: row[8], effort: row[9], notes: row[10]
+    });
+  });
+  return { date: date, sets: sets };
+}
+
+// Test from the editor: writes a sample journal to a TEST doc in the Daily folder.
+// Paste the TEST doc ID below (must be a "YYYY-MM-DD Daily Plan" doc).
+// SAFE: only writes to that one doc; never touches the real daily docs or sheets.
+function testJournal() {
+  const TEST_DATE = '2026-11-06';   // <-- set to a date that has a Daily Plan doc
+  const b = {
+    date: TEST_DATE,
+    q: '5',
+    g1: 'Good sleep', g2: 'Morning workout', g3: 'Quality time with family',
+    well: 'Stayed on plan all day',
+    didnt: 'Skipped the evening walk',
+    tobe: 'present and focused',
+    tohave: 'calm and clear-headed',
+    p1: 'Finish the journal tab', p2: 'Read 20 min', p3: 'Call Dad',
+    w1: 'Review quarterly goals', w2: 'Send the proposal', w3: 'Prep for standup',
+    h1: 'Fix the leaky faucet', h2: 'Pay electric bill', h3: 'Oil change'
+  };
+  const docRes = writeJournalToDoc_(b, b.date);
+  Logger.log('Doc result: ' + JSON.stringify(docRes));
+  if (docRes.found) {
+    // Print the URL so you can open it and verify.
+    const it = DriveApp.getFolderById(DAILY_FOLDER).getFilesByName(b.date + ' Daily Plan');
+    while (it.hasNext()) { const x = it.next(); if (!x.isTrashed()) Logger.log('Doc URL: ' + x.getUrl()); }
+  }
+  Logger.log('Done.');
 }
 
 // Deep Dive tab: row 3 = headers, rows 4+ = food | 9 compound columns (text, may be ranges).

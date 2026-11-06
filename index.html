@@ -505,6 +505,52 @@ html.dash:not(.desk) main{max-width:640px}
     <div class="note" id="verNote" style="margin-top:10px"></div>
   </div>
 </section>
+
+<!-- ================= JOURNAL ================= -->
+<section id="v-jour" class="hide">
+  <div class="card">
+    <div class="lbl">16 Questions</div>
+    <div class="fld"><label>Which question today? (1–16)</label>
+      <input class="f" id="jrQ" type="number" min="1" max="16" placeholder="e.g. 7" inputmode="numeric"></div>
+  </div>
+  <div class="card">
+    <div class="lbl">Grateful</div>
+    <div class="fld"><label>1</label><textarea class="f" id="jrG1" rows="2" placeholder="Grateful for…"></textarea></div>
+    <div class="fld"><label>2</label><textarea class="f" id="jrG2" rows="2" placeholder="Grateful for…"></textarea></div>
+    <div class="fld"><label>3</label><textarea class="f" id="jrG3" rows="2" placeholder="Grateful for…"></textarea></div>
+  </div>
+  <div class="card">
+    <div class="lbl">Reflect</div>
+    <div class="fld"><label>Went well</label><textarea class="f" id="jrWell" rows="2"></textarea></div>
+    <div class="fld"><label>Didn't go well</label><textarea class="f" id="jrDidnt" rows="2"></textarea></div>
+  </div>
+  <div class="card">
+    <div class="lbl">To Be · To Have</div>
+    <div class="fld"><label>Today I want to be</label><input class="f" id="jrTobe" placeholder="present, calm, focused…"></div>
+    <div class="fld"><label>Today I want to (have · feel)</label><input class="f" id="jrTohave" placeholder="relaxed, strong, clear…"></div>
+  </div>
+  <div class="card">
+    <div class="lbl">Top 3 Personal</div>
+    <div class="fld"><label>1</label><input class="f" id="jrP1"></div>
+    <div class="fld"><label>2</label><input class="f" id="jrP2"></div>
+    <div class="fld"><label>3</label><input class="f" id="jrP3"></div>
+  </div>
+  <div class="card">
+    <div class="lbl">Top 3 Work</div>
+    <div class="fld"><label>1</label><input class="f" id="jrW1"></div>
+    <div class="fld"><label>2</label><input class="f" id="jrW2"></div>
+    <div class="fld"><label>3</label><input class="f" id="jrW3"></div>
+  </div>
+  <div class="card">
+    <div class="lbl">Top 3 Honey-do · Bills</div>
+    <div class="fld"><label>1</label><input class="f" id="jrH1"></div>
+    <div class="fld"><label>2</label><input class="f" id="jrH2"></div>
+    <div class="fld"><label>3</label><input class="f" id="jrH3"></div>
+  </div>
+  <button class="btn" id="saveJour">Save morning journal</button>
+  <div class="note" id="jourNote" style="margin:8px 16px 0;min-height:18px"></div>
+  <div style="height:16px"></div>
+</section>
 </main>
 
 <div class="dbar" id="dBar">
@@ -515,6 +561,7 @@ html.dash:not(.desk) main{max-width:640px}
 </div>
 <nav>
   <button data-v="today" class="on"><span class="e">◎</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".8" fill="currentColor"/></svg><span class="tl">Today</span></button>
+  <button data-v="jour"><span class="e">📝</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><path d="M16 3l5 5-9 9H7v-5z"/></svg><span class="tl">Journal</span></button>
   <button data-v="log"><span class="e">＋</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3v7a3 3 0 0 0 6 0V3M9 3v18M17 21V3c-2 1.5-3 4-3 7s1 4 3 4"/></svg><span class="tl">Log</span></button>
   <button data-v="nut"><span class="e">❖</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.4 4.9 5.3.8-3.9 3.8.9 5.3L12 15.3 7.3 17.8l.9-5.3L4.3 8.7l5.3-.8z"/></svg><span class="tl">Nutrients</span></button>
   <button data-v="train"><span class="e">🏋︎</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6M6 7v10M18 7v10M21 9v6M6 12h12"/></svg><span class="tl">Train</span></button>
@@ -645,7 +692,7 @@ function demoDay(date){
 
 /* ======================= STATE ======================= */
 // Bump with every release; matches CHANGELOG.md.
-const APP_VERSION='v6.3.1', APP_VERSION_NAME='Plan B';
+const APP_VERSION='v6.4', APP_VERSION_NAME='Morning Pages';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const LS={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 let cfg=LS.get('fuel.cfg',{url:'',token:''});
@@ -767,7 +814,7 @@ function render(){
     el.innerHTML=`<div class="tm">${fmt12(e.time)}</div><div class="nm"><div>${chip?chip.e+' ':''}${esc(chip?chip.n:e.food)}</div><div>${esc(amtLabel(e))} · ${Math.round(m.kcal)} kcal</div></div><div class="pp">${Math.round(m.p)}g</div><button class="x" aria-label="Remove">✕</button>`;
     el.querySelector('.x').onclick=()=>removeEntry(e); list.appendChild(el); });
   $('#sameYest').classList.toggle('hide',!(d.prevEntries&&d.prevEntries.length));
-  renderWeek(); renderNut(); renderBody(); renderOut(); renderChips(); renderTrain(); renderGlance();
+  renderWeek(); renderNut(); renderBody(); renderOut(); renderChips(); renderTrain(); renderGlance(); renderJour();
 }
 function amtLabel(e){ const c=CHIPS.find(c=>c.food===e.food&&c.unit===e.unit); if(c) return c.show(e.amount); const f=foodBy(e.food); return e.unit==='serving'?`${e.amount} × ${f?f.serving:'serving'}`:`${e.amount} ${e.unit}`; }
 
@@ -1029,6 +1076,18 @@ let tr=null, trTick=null, rest={end:0,t:null};
 function trKey(){ return 'fuel.train.'+state.date; }
 function trLoad(){ tr=LS.get(trKey(),null)||{date:state.date,start:null,blocks:[],saved:false}; }
 function trSaveLS(){ LS.set(trKey(),tr); }
+// Past-day read-only sets (lazy loaded once per date).
+const psCache={};  // date → {loaded:bool, sets:[]}
+async function loadPastSets_(date){
+  if(!live()) return;
+  if(psCache[date]) return;
+  psCache[date]={loaded:false,sets:[]};
+  try{
+    const j=await api({action:'sets',date});
+    psCache[date]={loaded:true,sets:j.sets||[]};
+    if(state.date===date) renderTrain();
+  }catch(e){ psCache[date]={loaded:true,sets:[]}; }
+}
 function lastFor(n){ const h=LS.get('fuel.last',{}); return h[n]; }
 function setLast(n,v){ const h=LS.get('fuel.last',{}); h[n]=v; LS.set('fuel.last',h); }
 function defVals(n){ const L=lastFor(n), x=lib(n);
@@ -1044,7 +1103,34 @@ function blockLabel(b,i){ const L=String.fromCharCode(65+i); return b.ex.length=
 function fields(m){ return m==='carry'?[['w','lb/hand'],['dist','yd']]:m==='bag'?[['reps','slams'],null]:m==='count'?[['reps','sprints'],['time','sec']]:m==='r'?[['reps','reps'],['w','+lb']]:[['reps','reps'],['w','lb']]; }
 function renderTrain(){
   if(!tr||tr.date!==state.date) trLoad();
+  // ── Past-day read-only view ──────────────────────────────────────────
+  const isPastDay = state.date < todayKey();
   const box=$('#blocks'); box.innerHTML='';
+  if(isPastDay && !tr.blocks.length){
+    // Show saved sets from backend (or loading/empty state)
+    const cached=psCache[state.date];
+    if(!cached){ loadPastSets_(state.date); box.innerHTML='<p class="note" style="padding:12px 0">Loading saved sets…</p>'; }
+    else if(!cached.sets.length){ box.innerHTML='<p class="note" style="padding:12px 0">No sets saved for this day.</p>'; }
+    else{
+      // Group by exercise
+      const rows=cached.sets;
+      const byEx={};
+      rows.forEach(r=>{ if(!byEx[r.exercise]) byEx[r.exercise]=[]; byEx[r.exercise].push(r); });
+      let h='<div class="blk" style="opacity:.85"><h3 style="font-size:14px">Saved workout — read only</h3>';
+      Object.entries(byEx).forEach(([ex,sets])=>{
+        h+=`<div class="nm" style="margin:8px 0 4px;font-size:13px;font-weight:600">${esc(ex)}</div>`;
+        h+='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="color:var(--dim);font-size:11px"><th style="text-align:left;padding:2px 4px">Set</th><th style="text-align:right;padding:2px 4px">Reps</th><th style="text-align:right;padding:2px 4px">lb</th><th style="text-align:right;padding:2px 4px">Time</th></tr></thead><tbody>';
+        sets.forEach(s=>{ h+=`<tr><td style="padding:3px 4px">${s.set}</td><td style="text-align:right;padding:3px 4px">${s.reps||'—'}</td><td style="text-align:right;padding:3px 4px">${s.weight||'—'}</td><td style="text-align:right;padding:3px 4px">${s.time||'—'}</td></tr>`; });
+        h+='</tbody></table>';
+      });
+      h+='</div>';
+      box.innerHTML=h;
+    }
+    // Hide entry controls for past day
+    $('#trStatus').textContent='past day — read only';
+    return;
+  }
+  // ── Current day (or past day with locally-entered blocks) ─────────────
   tr.blocks.forEach((b,bi)=>{
     const el=document.createElement('div'); el.className='blk';
     let h=`<h3><span><span class="tag">${blockLabel(b,bi)}</span><br>${b.ex.map(e=>esc(e.n)).join(' + ')}</span><button class="x" data-del="${bi}" aria-label="Remove block">✕</button></h3>`;
@@ -1174,6 +1260,83 @@ function journalFilled(x){
   const rest=raw.replace(/^\d\)\s*/,'').replace(/^[A-Za-z][A-Za-z /']*:\s*/,'').trim();
   return rest.length>0;
 }
+/* ======================= MORNING JOURNAL ======================= */
+// Field map: [elementId, fieldKey]
+const JR_FIELDS=[['jrQ','q'],['jrG1','g1'],['jrG2','g2'],['jrG3','g3'],
+  ['jrWell','well'],['jrDidnt','didnt'],['jrTobe','tobe'],['jrTohave','tohave'],
+  ['jrP1','p1'],['jrP2','p2'],['jrP3','p3'],
+  ['jrW1','w1'],['jrW2','w2'],['jrW3','w3'],
+  ['jrH1','h1'],['jrH2','h2'],['jrH3','h3']];
+
+let jrT={};  // touched fields for state.date (not yet saved)
+
+// Extract field values from the parsePlan jr array.
+function parseJournalFields(jr){
+  const f={};
+  jr.forEach(item=>{
+    const sub=(item.sub||'').toUpperCase();
+    const raw=(item.t||'').replace(/\\/g,'').trim();
+    if(/GRATEFUL/.test(sub)){
+      const m=raw.match(/^(\d)\)\s*(.*)/); if(m&&m[2].trim()){const v={1:'g1',2:'g2',3:'g3'}[+m[1]];if(v)f[v]=m[2].trim();}
+    }
+    if(/REFLECT/.test(sub)){
+      const mw=raw.match(/^Went well:\s*(.*)/i); if(mw&&mw[1].trim()) f.well=mw[1].trim();
+      const md=raw.match(/^Didn.?t:\s*(.*)/i); if(md&&md[1].trim()) f.didnt=md[1].trim();
+    }
+    if(/16\s*Q/i.test(sub)){
+      const mp=raw.match(/·\s*picked\s+Q(\d+)/i); if(mp) f.q=mp[1];
+    }
+    if(/TOP 3 PERSONAL/.test(sub)){
+      const m=raw.match(/^(\d)\)\s*(.*)/); if(m&&m[2].trim()){const v={1:'p1',2:'p2',3:'p3'}[+m[1]];if(v)f[v]=m[2].trim();}
+    }
+    if(/TOP 3 WORK/.test(sub)){
+      const m=raw.match(/^(\d)\)\s*(.*)/); if(m&&m[2].trim()){const v={1:'w1',2:'w2',3:'w3'}[+m[1]];if(v)f[v]=m[2].trim();}
+    }
+    if(/TOP 3 HONEY/.test(sub)||/HONEY.DO/.test(sub)){
+      const m=raw.match(/^(\d)\)\s*(.*)/); if(m&&m[2].trim()){const v={1:'h1',2:'h2',3:'h3'}[+m[1]];if(v)f[v]=m[2].trim();}
+    }
+    // TO BE / TO HAVE — both may live under the same sub-heading.
+    if(/^Today I want to be\s*:/i.test(raw))       f.tobe   = raw.replace(/^Today I want to be\s*:\s*/i,'').trim();
+    else if(/^Today I want to\s*:/i.test(raw))     f.tohave = raw.replace(/^Today I want to\s*:\s*/i,'').trim();
+  });
+  return f;
+}
+
+function renderJour(){
+  const dk='fuel.jrDraft.'+state.date;
+  jrT=LS.get(dk,{});
+  // Base: what's in the doc (read-only prefill). Draft overrides.
+  const docF=(plan&&plan.found&&plan.md)?parseJournalFields(parsePlan(plan.md).jr||[]):{};
+  const vals={...docF,...jrT};
+  JR_FIELDS.forEach(([id,key])=>{ const el=$('#'+id); if(el) el.value=vals[key]||''; });
+  $('#jourNote').textContent='';
+}
+
+function draftJour(key){
+  const pair=JR_FIELDS.find(([,k])=>k===key); if(!pair) return;
+  const el=$('#'+pair[0]); if(!el) return;
+  const v=el.value.trim();
+  if(v) jrT[key]=v; else delete jrT[key];
+  LS.set('fuel.jrDraft.'+state.date,jrT);
+}
+
+// Wire up input events.
+JR_FIELDS.forEach(([id,key])=>{
+  const el=$('#'+id);
+  if(el) el.addEventListener('input',()=>draftJour(key));
+});
+
+$('#saveJour').onclick=async()=>{
+  const payload=Object.keys(jrT).length?{...jrT}:null;
+  if(!payload){ toast('Nothing new to save'); return; }
+  if(!live()){ toast('Saved (demo — not sent)'); jrT={}; LS.set('fuel.jrDraft.'+state.date,{}); renderJour(); return; }
+  enqueue({action:'saveJournal',date:state.date,...payload});
+  jrT={}; LS.set('fuel.jrDraft.'+state.date,{});
+  toast('Journal queued');
+  $('#jourNote').textContent='Saving…';
+  renderJour();
+};
+
 /* ======================= DRIVE DAY (🚗 button) ======================= */
 // Missed the train and drove in? One tap swaps the train/walk items for drive times and moves the
 // workout to the evening. Only changes what Fuel shows; the Daily Plan doc is untouched.
@@ -1230,9 +1393,9 @@ function renderPlan(){
 $$('#ptabs button').forEach(b=>b.onclick=()=>{ planTab=b.dataset.p; $$('#ptabs button').forEach(x=>x.classList.toggle('on',x===b)); LS.set('fuel.planTab',planTab); renderPlan(); });
 async function loadPlan(){
   const k='fuel.plan.'+state.date, want=state.date;
-  if(!live()){ plan={found:true,md:DEMO_PLAN_MD,url:''}; renderPlan(); return; }
-  plan=LS.get(k,null); renderPlan();
-  try{ const j=await api({action:'plan',date:want}); if(want!==state.date) return; plan=j; LS.set(k,j); renderPlan(); }
+  if(!live()){ plan={found:true,md:DEMO_PLAN_MD,url:''}; renderPlan(); renderJour(); return; }
+  plan=LS.get(k,null); renderPlan(); renderJour();
+  try{ const j=await api({action:'plan',date:want}); if(want!==state.date) return; plan=j; LS.set(k,j); renderPlan(); renderJour(); }
   catch(err){ if(!plan){ $('#planBody').innerHTML='<div class="empty">Couldn\'t load the plan ('+esc(err.message)+').</div>'; } }
 }
 (function(){ const t=LS.get('fuel.planTab','it'); planTab=t; $$('#ptabs button').forEach(x=>x.classList.toggle('on',x.dataset.p===t)); })();
@@ -1304,7 +1467,7 @@ $('#verNote').innerHTML=`Pillars Fuel <b>${APP_VERSION}</b> "${APP_VERSION_NAME}
 $('#saveSet').onclick=()=>{ cfg={url:$('#sUrl').value.trim(),token:$('#sTok').value.trim()}; LS.set('fuel.cfg',cfg); LS.set('fuel.bootAt',0);
   if(!live()){ Object.assign(state,{goals:DEMO_GOALS,foods:DEMO_FOODS,targets:DEMO_TARGETS}); } load(); toast(live()?'Connecting…':'Demo mode'); };
 $('#refreshData').onclick=()=>{ if(!live()){ toast('Demo mode'); return; } LS.set('fuel.bootAt',0); toast('Refreshing…'); load(); };
-function show(v){ ['today','log','nut','train','body','out'].forEach(x=>$('#v-'+x).classList.toggle('hide',x!==v)); $$('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+function show(v){ ['today','log','nut','train','body','out','jour'].forEach(x=>$('#v-'+x).classList.toggle('hide',x!==v)); $$('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
   window.scrollTo(0,0); const sk=LS.get('fuel.skipped',[]); $('#queueNote').innerHTML=(queue.length?queue.length+' change(s) waiting to save.':'')+(sk.length?'<br>Last skipped: '+sk.map(esc).join('<br>'):''); }
 $$('nav button').forEach(b=>b.onclick=()=>show(b.dataset.v));
 $('#goLog').onclick=()=>show('log');
