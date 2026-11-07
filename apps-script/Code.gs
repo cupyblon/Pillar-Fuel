@@ -15,7 +15,9 @@
  *    (Training min, pulled from Strength > Sessions) are formulas that fill their whole column;
  *    typing into any cell below them breaks the column with #REF!.
  *  - Pillars Tracker > Daily Log    : check-out columns, matched by header name.
- *  READ ONLY: Daily folder "YYYY-MM-DD Daily Plan" docs (GET ?action=plan&date=...).
+ *  - Daily Plan docs ("YYYY-MM-DD Daily Plan" in the Daily folder):
+ *      READ  via GET ?action=plan&date=...
+ *      WRITE via saveJournal (MORNING JOURNAL section only; touched fields; never deletes).
  *  - Strength Training > Workout Log: A-K, one row per set (L-N are formulas);
  *                                     Notes end with "#W…" so re-saving a workout replaces it.
  *  - Strength Training > Sessions   : A-D, one row per workout day (E-G are formulas).
@@ -574,29 +576,41 @@ function readSets_(date) {
   return { date: date, sets: sets };
 }
 
-// Test from the editor: writes a sample journal to a TEST doc in the Daily folder.
-// Paste the TEST doc ID below (must be a "YYYY-MM-DD Daily Plan" doc).
-// SAFE: only writes to that one doc; never touches the real daily docs or sheets.
+// Author: Grok (xAI), 2026-11-06.
+// Test from the editor: opens ONE specific test document. Does not write.
+//
+// SAFETY RULES (do not weaken these):
+//   - TEST_DOC_ID must be set explicitly. If empty, the function aborts immediately
+//     and does nothing.
+//   - It never searches the Daily folder by date.
+//   - It never calls writeJournalToDoc_, so it cannot overwrite a real Daily Plan.
+//
+// How to use:
+//   1. Create (or copy) a throwaway "YYYY-MM-DD Daily Plan" doc for testing.
+//   2. Paste its document ID into TEST_DOC_ID below.
+//   3. Run testJournal() from the Apps Script editor.
+//   4. Clear TEST_DOC_ID when finished.
+//
+// A full by-ID sample write is intentionally not included. The old helper
+// looked up today's real Daily Plan by date and wrote sample answers into it.
 function testJournal() {
-  const TEST_DATE = '2026-11-06';   // <-- set to a date that has a Daily Plan doc
-  const b = {
-    date: TEST_DATE,
-    q: '5',
-    g1: 'Good sleep', g2: 'Morning workout', g3: 'Quality time with family',
-    well: 'Stayed on plan all day',
-    didnt: 'Skipped the evening walk',
-    tobe: 'present and focused',
-    tohave: 'calm and clear-headed',
-    p1: 'Finish the journal tab', p2: 'Read 20 min', p3: 'Call Dad',
-    w1: 'Review quarterly goals', w2: 'Send the proposal', w3: 'Prep for standup',
-    h1: 'Fix the leaky faucet', h2: 'Pay electric bill', h3: 'Oil change'
-  };
-  const docRes = writeJournalToDoc_(b, b.date);
-  Logger.log('Doc result: ' + JSON.stringify(docRes));
-  if (docRes.found) {
-    // Print the URL so you can open it and verify.
-    const it = DriveApp.getFolderById(DAILY_FOLDER).getFilesByName(b.date + ' Daily Plan');
-    while (it.hasNext()) { const x = it.next(); if (!x.isTrashed()) Logger.log('Doc URL: ' + x.getUrl()); }
+  // Paste a real Google Doc ID here only when you intentionally want to test.
+  // Leave empty to keep the helper completely inert.
+  const TEST_DOC_ID = '';   // e.g. '1abc...xyz'
+
+  if (!TEST_DOC_ID) {
+    Logger.log('testJournal() aborted: TEST_DOC_ID is empty. ' +
+               'Set it to a dedicated test document ID before running.');
+    return;
+  }
+
+  try {
+    const doc = DocumentApp.openById(TEST_DOC_ID);
+    Logger.log('Opened test doc successfully: ' + doc.getUrl());
+    Logger.log('Name: ' + doc.getName());
+    Logger.log('No write performed. This helper no longer calls writeJournalToDoc_.');
+  } catch (err) {
+    Logger.log('testJournal() failed to open document: ' + err.message);
   }
   Logger.log('Done.');
 }
