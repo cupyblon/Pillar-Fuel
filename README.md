@@ -10,7 +10,7 @@ through a private Google Apps Script endpoint.
 - Setup: see `SETUP.md`
 - **Beta (demo data only): https://cupyblon.github.io/Pillar-Fuel/beta/** — every app change lands here first; production changes only after "promote"
 - Testing: see `TESTING.md` (automated tests in `tests/` + a 10-minute phone checklist)
-- Version history: see `CHANGELOG.md` (current: **v6.3.1**) · Live: https://cupyblon.github.io/Pillar-Fuel/
+- Version history: see `CHANGELOG.md` (current: **v6.4**) · Live: https://cupyblon.github.io/Pillar-Fuel/
 
 No data or credentials live in this repo. The script URL and token are stored only on the phone.
 Without them the app runs in demo mode.

@@ -23,7 +23,7 @@ node tests/run.js
 - Any `FAIL` (exit 1) means don't push.
 - To test a different backend file: `GS=path/to/Code.gs node tests/run.js`
 
-**What it checks:** retry duplicates, remove after a lost reply, a stuck queue, batch sync, the body-field clear, workout re-save, the Monsters # overwrite, untouched check-out fields, trashed Daily Plan docs, the startup sheet count, the date tap area, and the version label.
+**What it checks:** retry duplicates, remove after a lost reply, a stuck queue, batch sync, the body-field clear, workout re-save, the Monsters # overwrite, untouched check-out fields, trashed Daily Plan docs, the startup sheet count, the date tap area, the version label, journal writes (J1–J4), and past-day Train sets reads (K1–K3).
 
 **To run it on your PC (one time):** install Node.js, then in the repo folder:
 
@@ -76,6 +76,7 @@ Where to look:
 
 | Date | Version | Automated | Phone checklist | Notes |
 |---|---|---|---|---|
+| 2026-11-06 | v6.4 | 30/30 pass (per changelog) | not run yet | Journal tab + past-day Train sets. testJournal() made inert unless TEST_DOC_ID is set (Grok). |
 | 2026-11-03 | v6.1.2 | 18/18 pass | not run yet | |
 | 2026-11-05 | v6.3 | 23/23 pass | not run yet | added drive-day checks |
 | 2026-11-04 | v6.2 | 20/20 pass | not run yet | added caffeine/erythritol check |
