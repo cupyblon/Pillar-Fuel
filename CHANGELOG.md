@@ -54,6 +54,17 @@ Backend deploys and repo housekeeping. The token and URL themselves are **never*
 
 **Promoted Nov 6, 2026:** v6.4 "Morning Pages" moved from beta to production after Fernando's OK.
 
+## v6.5 "Big Red Button" (Nov 14, 2026) — BETA ONLY, not promoted
+**Backend: No.** Only `beta/` changed. Production (v6.4) is untouched until Fernando says "promote".
+
+- **Big red button (Train tab, every exercise).** Each block has a new **● Big button**. Tap it once and the screen becomes one red **DONE** button (about 78% of the screen). Tap it when the round is done. It stays up through rest and the next rounds until you tap **Close**.
+- **Rest screen.** After DONE the same screen shows a large countdown with **+30s**, **Pause** and **Skip rest**. Taps on the countdown area do nothing, and a double-tap inside 0.6 s is ignored, so a tired tap can't log two rounds. The screen stays awake while the big button is up (where the browser allows it).
+- **Pause workout.** Pause/Resume is on the big screen, on the rest bar, and in the Workout card. Pause freezes both the rest countdown and the session clock, so paused time is not counted in session minutes.
+- **Rest is tracked.** Each round saves the seconds actually rested (countdown time used, including +30s adds, stopping early if you skip; paused time left out). That number goes in the existing rest field of each set, so no Code.gs change is needed. A round where the timer never ran keeps the planned 75 s / 90 s, as before.
+- **Summary.** The Workout card shows total rest and how many times +30s was tapped. The save prompt shows them too, and a set's note says `rest +30s × N` when adds were used.
+- **Not included:** the sprint seconds are still typed in, not auto-timed.
+- **Tests:** new `tests/beta-train.js` (22 checks, all pass). `tests/run.js` (production file) still passes, unchanged.
+
 ## v6.4 "Morning Pages" (Nov 6, 2026)
 **Backend: Yes.** Paste the new `apps-script/Code.gs` and redeploy: **Deploy → Manage deployments → pencil → Version: New version → Deploy**.
 Also: on first open after the backend deploy, Google will ask you to re-authorize. That's expected — v6.4 adds the **Documents** permission so the journal can write to your Daily Plan docs.
