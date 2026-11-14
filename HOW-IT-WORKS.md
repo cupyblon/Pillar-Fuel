@@ -68,20 +68,23 @@ flowchart LR
 | GET | `bootstrap` | First load: foods list, goals, targets, Deep Dive data, and the day's entries |
 | GET | `day` | One day: entries, body stats, check-out, 30-day history |
 | GET | `plan` | That date's Daily Plan doc (read only) |
+| GET | `sets` | Workout sets already saved for a date (read only) |
+| GET | `budget` | That month's budget vs actual and bills, for the Money tab (read only) |
 | POST | `addFood` / `removeFood` | Add or clear one Food Log row |
 | POST | `saveBody` | Weight, steps, water, exercise, note |
 | POST | `saveCheckout` | Evening check-out fields in the tracker |
 | POST | `addSets` | Workout sets plus a session row |
+| POST | `saveJournal` | Morning journal into the Daily Plan doc and the tracker |
 | POST | `batch` | Up to 20 of the above in one trip (used by the offline queue) |
 
 **`appsscript.json`** sets three things:
 - **Time zone:** must match your sheets.
-- **Permissions:** spreadsheets, read-only Drive, and outside requests (used to export the Daily Plan doc as text).
+- **Permissions:** spreadsheets, read-only Drive, documents (the journal writes into the Daily Plan doc), and outside requests (used to export the Daily Plan doc as text). All four must be in the file, each listed once.
 - **Web app settings:** "execute as me," and access set to "anyone."
 
 ### 2c. The data (Google Sheets + Drive)
 
-Three spreadsheets and a folder. Column letters matter, because the backend writes by position.
+Three spreadsheets the app writes to, two it only reads, and a folder. Column letters matter, because the backend writes by position.
 
 | Sheet → tab | Columns the app **writes** | Columns that are **formulas** (never written) |
 |---|---|---|
@@ -93,7 +96,9 @@ Three spreadsheets and a folder. Column letters matter, because the backend writ
 | Tracker → **Daily Log** | Check-out columns, matched **by header name**; meal columns only if empty | Everything else |
 | Strength → **Workout Log** | A–K, one row per set; Notes end with `#W…` | L–N |
 | Strength → **Sessions** | A–D, one row per workout day | E–G |
-| Drive → **Daily folder** | (read only) docs named `YYYY-MM-DD Daily Plan` | — |
+| Drive → **Daily folder** | Morning journal lines in the doc named `YYYY-MM-DD Daily Plan`; everything else read only | — |
+| Budget 2026 → **"Mon YYYY budget"** tabs | (read only) lines and totals are found by the name in column A, not by row number | Whole tab |
+| Bill Tracker 2026 → **Untitled** | (read only) Vendor, Amount Due, Due Date, Status, Paid On. Rows with Status `Placeholder`, and unpaid rows with no amount and no due date, are not shown | — |
 
 ---
 
@@ -144,7 +149,7 @@ These are the lessons learned. Keep them if you change anything.
   - Don't share screenshots of Settings with the token filled in.
   - If it leaks, run `setToken()` in Apps Script and paste the new token into the app.
 - **Old deployments stay live.** Each **New deployment** creates a new address that keeps running its old code. Archive old ones under **Deploy → Manage deployments**.
-- **What a token holder could do:** read the data the app reads (food, body, check-out, plan docs), and write only the specific cells listed in section 2c. They can't run their own code or open your other files.
+- **What a token holder could do:** read the data the app reads (food, body, check-out, plan docs, and since v7.0 the monthly budget and bills), and write only the specific cells listed in section 2c. They can't run their own code or open your other files.
 
 ---
 
@@ -210,7 +215,8 @@ Before pushing any code change, run the automated tests (`node tests/run.js`, se
 | `manifest.webmanifest`, `icon-*.png` | Home-screen install |
 | `apps-script/Code.gs`, `apps-script/appsscript.json` | Backend, working copy (the tests run against it) |
 | `code.gs`, `appsscript.json` (repo root) | Owner's copy of what's actually deployed |
-| `tests/` | Automated end-to-end tests (real app plus real backend on mock sheets) |
+| `beta/` | Beta copy of the app: sample data only, never talks to the sheets |
+| `tests/` | Automated end-to-end tests (real app plus real backend on mock sheets), plus two beta checks |
 | `SETUP.md` | Original install notes for this specific setup |
 | `TESTING.md` | Automated tests plus a 10-minute phone checklist |
 | `CHANGELOG.md` | Version history and deploy log |

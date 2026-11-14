@@ -37,7 +37,7 @@ function makeEnv(){
   bud['Oct 2026 budget']=new Sheet('Oct 2026 budget',[['INCOME'],['Salary',6000,6100],['Total income',6000,6100],['NECESSARY'],['Mortgage',1800,1900],['Total necessary',1800,1900],['DISCRETIONARY'],['Dining out',180,300],['Total discretionary',180,300],['Net cash flow (income - all spending)',4020,3900]]);
   bud['Jun 2026 actuals']=new Sheet('Jun 2026 actuals',[['INCOME'],['Salary',1,1],['Total income',1,1]]);   // old layout/name: must be ignored
   const bil={ 'Untitled':new Sheet('Untitled',[['Bill Tracker'],[],[],['Vendor','Amount Due','Due Date','Status','Paid On','Notes / Source'],
-    ['Old Paid Co',50,d('2026-09-10'),'Paid',d('2026-09-09'),''],['Power Co',120,d('2026-11-05'),'Paid',d('2026-11-04'),''],['Phone Co',228.56,d('2026-11-25'),'Invoiced','',''],['Late Co',75,d('2026-10-20'),'Overdue','','']]) };
+    ['Old Paid Co',50,d('2026-09-10'),'Paid',d('2026-09-09'),''],['Power Co',120,d('2026-11-05'),'Paid',d('2026-11-04'),''],['Phone Co',228.56,d('2026-11-25'),'Invoiced','',''],['Late Co',75,d('2026-10-20'),'Overdue','',''],['Blank Co','','','','','fill from bill'],['Template Co',99,d('2026-08-01'),'Placeholder','',''],['Yearly Co','',d('2027-02-01'),'','',''],['NoAmt Paid Co','','','Paid',d('2026-11-02'),'']]) };
   const books={'1TmlnhFuHJ5SWfY5lR7xMevsoGAAcavCeYDdx-231tfI':bud,'1TXqoiVJ3RxzzLCLMMA7rlSjlnDkALSrYmx__pwN95pk':bil,'1mAkG128NSk-IzEJg-EZTNbNBz7YmmhnlBjJJAYMoyhA':nut,'1f2wlJqIKezVA1OHgX1OyHAwTmrXsCE019LNKDu0UvuA':trk,'1LYztTug2l94R81f5B0mgak0F3pR9GkM-g1hyBuWETpo':str};
   const props={APP_TOKEN:'t'}; const opens={n:0};
   const files=[{name:'2026-11-03 Daily Plan',trashed:true,id:'OLD',upd:new Date(2026,10,3,9)},{name:'2026-11-03 Daily Plan',trashed:false,id:'GOOD',upd:new Date(2026,10,3,5)}];

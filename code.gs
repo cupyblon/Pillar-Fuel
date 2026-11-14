@@ -621,6 +621,7 @@ function budget_(date) {
   const d = readMonth_(SpreadsheetApp.openById(BUDGET_ID), y, m);
   if (d) { out.found = true; out.lines = d.lines; out.totals = d.totals; out.net = d.net; out.saved = d.saved; out.hsaPaid = d.hsaPaid; }
   // Bills: anything not marked Paid, plus anything due or paid in this month.
+  // Left out (v7.1.1): rows with Status "Placeholder", and unpaid rows that have neither an amount nor a due date.
   const bs = SpreadsheetApp.openById(BILLS_ID).getSheetByName('Untitled');
   if (bs && bs.getLastRow() > 0) {
     const rows = bs.getRange(1, 1, bs.getLastRow(), 6).getValues();
@@ -638,6 +639,8 @@ function budget_(date) {
         const status = String(r[col['Status']] || '').trim();
         const paid = /^paid/i.test(status);
         if (paid && due.slice(0, 7) !== ym && paidOn.slice(0, 7) !== ym) continue;
+        if (/^placeholder/i.test(status)) continue;
+        if (!paid && !due && money_(r[col['Amount Due']]) == null) continue;
         out.bills.push({ vendor: vendor, amount: money_(r[col['Amount Due']]), due: due, status: status, paidOn: paidOn, paid: paid });
       }
       out.bills.sort(function (a, b) { return (a.due || '9999') < (b.due || '9999') ? -1 : 1; });

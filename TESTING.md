@@ -23,7 +23,14 @@ node tests/run.js
 - Any `FAIL` (exit 1) means don't push.
 - To test a different backend file: `GS=path/to/Code.gs node tests/run.js`
 
-**What it checks:** retry duplicates, remove after a lost reply, a stuck queue, batch sync, the body-field clear, workout re-save, the Monsters # overwrite, untouched check-out fields, trashed Daily Plan docs, the startup sheet count, the date tap area, the version label, journal writes (J1–J4), and past-day Train sets reads (K1–K3).
+**What it checks:** retry duplicates, remove after a lost reply, a stuck queue, batch sync, the body-field clear, workout re-save, the Monsters # overwrite, untouched check-out fields, trashed Daily Plan docs, the startup sheet count, the date tap area, the version label, journal writes (J1–J4), past-day Train sets reads (K1–K3), and the Money tab (M1–M9: budget lines found by name, bills filtered, live numbers in the app, month arrows).
+
+**Two more files** check the beta copy with sample data and no network:
+
+```
+node tests/beta-train.js    # big red button, rest countdown, +30s, pause, rest tracking
+node tests/beta-money.js    # Money tab layout, due dates, month arrows
+```
 
 **To run it on your PC (one time):** install Node.js, then in the repo folder:
 
