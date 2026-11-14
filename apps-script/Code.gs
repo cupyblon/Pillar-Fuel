@@ -617,19 +617,9 @@ function readMonth_(ss, y, m) {
 function budget_(date) {
   const y = Number(String(date).slice(0, 4)), m = Number(String(date).slice(5, 7));
   const label = MONTHS_[m - 1] + ' ' + y;
-  const out = { month: label, found: false, lines: [], totals: {}, net: null, saved: null, hsaPaid: null, bills: [], billsFound: false, year: [] };
-  const ss = SpreadsheetApp.openById(BUDGET_ID);
-  // Month-by-month totals for the whole year (v7.1): one row per month that has a budget tab.
-  for (let k = 1; k <= 12; k++) {
-    const d = readMonth_(ss, y, k);
-    if (!d) continue;
-    const T = d.totals, v = function (sec, f) { return T[sec] && T[sec][f] != null ? T[sec][f] : 0; };
-    out.year.push({ ym: y + '-' + (k < 10 ? '0' : '') + k, month: MONTHS_[k - 1] + ' ' + y,
-      income: v('income', 'actual'), spent: v('necessary', 'actual') + v('discretionary', 'actual'),
-      plan: v('necessary', 'budget') + v('discretionary', 'budget'), invested: v('investment', 'actual'),
-      net: d.net ? d.net.actual : null, saved: d.saved ? d.saved.actual : null });
-    if (k === m) { out.found = true; out.lines = d.lines; out.totals = d.totals; out.net = d.net; out.saved = d.saved; out.hsaPaid = d.hsaPaid; }
-  }
+  const out = { month: label, found: false, lines: [], totals: {}, net: null, saved: null, hsaPaid: null, bills: [], billsFound: false };
+  const d = readMonth_(SpreadsheetApp.openById(BUDGET_ID), y, m);
+  if (d) { out.found = true; out.lines = d.lines; out.totals = d.totals; out.net = d.net; out.saved = d.saved; out.hsaPaid = d.hsaPaid; }
   // Bills: anything not marked Paid, plus anything due or paid in this month.
   const bs = SpreadsheetApp.openById(BILLS_ID).getSheetByName('Untitled');
   if (bs && bs.getLastRow() > 0) {

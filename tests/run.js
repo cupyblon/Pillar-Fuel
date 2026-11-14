@@ -108,9 +108,13 @@ const APP='file://'+path.join(__dirname,'..','index.html');
     ok(m.lines.find(l=>l.name==='Food').budget===600&&m.lines.find(l=>l.name==='A brand new line').section==='necessary', 'M3) text budget "600.00" read as a number; an added line is picked up');
     ok(m.bills.map(x=>x.vendor).join()==='Late Co,Power Co,Phone Co', 'M4) bills: open + this month only, by due date: '+m.bills.map(x=>x.vendor).join());
     const none=env.get({token:'t',action:'budget',date:'2026-03-10'}); ok(none.found===false&&!none.error, 'M5) month with no tab -> found:false, no error');
-    ok(env.get({token:'bad',action:'budget',date:'2026-11-14'}).error==='Bad token', 'M6) budget needs the token');
-    ok(m.year.map(x=>x.ym).join()==='2026-10,2026-11'&&m.year[0].spent===2200&&m.year[0].plan===1980&&m.year[0].net===3900&&m.year[1].income===3000, 'M7) month-by-month totals: '+m.year.map(x=>x.month+' in '+x.income+' out '+x.spent+' net '+x.net).join(' | '));
-    ok(none.year.length===2, 'M8) a month with no tab still returns the year list ('+none.year.length+' months)'); }
+    ok(env.get({token:'bad',action:'budget',date:'2026-11-14'}).error==='Bad token', 'M6) budget needs the token'); }
+  // M7-M9: Money tab in the real app, live against the mock backend
+  await pg.evaluate("state.date='2026-11-14'; load()"); await pg.waitForTimeout(400); await pg.evaluate("show('money')"); await pg.waitForTimeout(700);
+  ok(await pg.textContent('#mnIn')==='$3,000' && await pg.textContent('#mnOut')==='$2,630' && await pg.textContent('#mnNet')==='$170', 'M7) Money tab shows live numbers: income '+await pg.textContent('#mnIn')+', spent '+await pg.textContent('#mnOut')+', net '+await pg.textContent('#mnNet'));
+  ok(/Due Nov 25/.test(await pg.textContent('#mnBills')) && /Due Oct 20/.test(await pg.textContent('#mnBills')), 'M8) bills show due dates from Bill Tracker');
+  await pg.evaluate("$('#mnPrev').click()"); await pg.waitForTimeout(700);
+  ok(await pg.textContent('#mnMonth')==='Oct 2026' && await pg.textContent('#mnIn')==='$6,100', 'M9) month arrow loads October: income '+await pg.textContent('#mnIn'));
   await b.close();
   console.log(fails?`\n${fails} FAILED`:'\nALL PASSED'); process.exit(fails?1:0);
 })();

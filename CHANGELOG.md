@@ -27,6 +27,7 @@ Backend deploys and repo housekeeping. The token and URL themselves are **never*
 | Nov 4 | v6.1.4 | Code.gs pasted; ran a function in the editor (made a new token); deployed; app Settings updated | Yes | Yes | `code.gs` updated (b560b5b) |
 | Nov 4 | v6.2 | Code.gs pasted; new deployment "v6.2 Fine Print" (Version 4, 5:22 PM); all 3 older deployments archived. App Settings need the new URL | Not stated | Yes | `code.gs` updated (944cc23) |
 | Nov 6 | v6.4 | **Paste Code.gs + redeploy (new version, same URL).** Re-auth required (Documents scope added). App updates on next open. | No | No | `apps-script/Code.gs` + `apps-script/appsscript.json` updated |
+| Nov 14 | v7.1 | **Pending: Fernando is redoing the whole deploy** (new Code.gs + appsscript.json, new token via `setToken()`, New deployment). App Settings need the new URL and token. Archive the old deployments. | Yes | Yes | `code.gs`, `appsscript.json` and `apps-script/` copies all updated |
 
 **Where the files live:**
 - `apps-script/Code.gs` and `apps-script/appsscript.json` are the working copies. The tests run against these.
@@ -54,39 +55,26 @@ Backend deploys and repo housekeeping. The token and URL themselves are **never*
 
 **Promoted Nov 6, 2026:** v6.4 "Morning Pages" moved from beta to production after Fernando's OK.
 
-## v7.1 "Money, month by month" (Nov 14, 2026) — BETA ONLY, not promoted
-**Backend: Yes, but only when promoted** (same as v7.0: paste `apps-script/Code.gs`, redeploy as a New version).
+**Promoted Nov 14, 2026:** v6.5, v7.0 and v7.1 moved from beta to production together as **v7.1 "Money"**, on Fernando's instruction ("move all to production").
 
-- **Month arrows on the Money tab.** ‹ › step one month at a time, without changing the day you are logging. It stops at the current month.
-- **Month by month card.** One row per month that has a budget tab: income, spent, net, plus a total row. Spent turns red when it is over that month's plan. Tap a row to open that month.
-- **Due date on every bill.** Each bill has a "Due Nov 25" tag, paid ones included. Open bills also say "in 11 days", "today" or "3 days late"; due within 7 days is amber, late is red.
-- **Backend:** the `budget` action now also returns `year`, the totals for every "Mon YYYY budget" tab in that year. Still read-only.
-- **Tests:** `tests/run.js` +2 (M7–M8), `tests/beta-money.js` +5 (N11–N15). All pass.
+## v7.1 "Money" (Nov 14, 2026)
+**Backend: Yes.** Paste `apps-script/Code.gs` and `apps-script/appsscript.json`, then deploy. The Money tab says "Backend needs the v7.0 Code.gs" until that is done; every other tab keeps working on the old backend.
 
-## v7.0 "Money" (Nov 14, 2026) — BETA ONLY, not promoted
-**Backend: Yes, but only when promoted.** The beta shows sample numbers and never calls the backend. Real numbers need the new `apps-script/Code.gs` pasted and redeployed (**Deploy → Manage deployments → pencil → Version: New version → Deploy**). No new Google permission is needed.
-
-- **New $ Money tab (read-only).** Follows the month of the date at the top.
-  - Income, spending vs plan, net cash flow, and how much of the plan is used vs how much of the month is gone.
-  - **Over budget:** every line over its budget, biggest first. A line with spending and a $0 budget says "no budget set".
-  - **Bills:** open bills first (overdue marked), then bills paid this month, from Bill Tracker 2026.
-  - **Saved & invested:** true savings, Bitcoin bought, investment total, and health care paid from the HSA (info only).
-  - **Every line:** actual / budget with a bar, grouped Income / Necessary / Discretionary / Investment.
-- **Backend (`Code.gs`):** new GET action `budget`. It only reads. It finds lines and totals by their name in column A, so adding rows to a month tab does not break the app. Months without a "Mon YYYY budget" tab (before Jul 2026) show "No budget tab".
-- **Not included:** adding a transaction from the phone; net worth and loan balances (those live in `finances.json` on the PC).
-- **Privacy:** anyone with the app's URL and token could read these numbers, the same as the food and journal data. The beta holds made-up sample numbers only.
-- **Tests:** `tests/run.js` +6 backend checks (M1–M6); new `tests/beta-money.js` (10 checks). All pass.
-
-## v6.5 "Big Red Button" (Nov 14, 2026) — BETA ONLY, not promoted
-**Backend: No.** Only `beta/` changed. Production (v6.4) is untouched until Fernando says "promote".
-
-- **Big red button (Train tab, every exercise).** Each block has a new **● Big button**. Tap it once and the screen becomes one red **DONE** button (about 78% of the screen). Tap it when the round is done. It stays up through rest and the next rounds until you tap **Close**.
-- **Rest screen.** After DONE the same screen shows a large countdown with **+30s**, **Pause** and **Skip rest**. Taps on the countdown area do nothing, and a double-tap inside 0.6 s is ignored, so a tired tap can't log two rounds. The screen stays awake while the big button is up (where the browser allows it).
-- **Pause workout.** Pause/Resume is on the big screen, on the rest bar, and in the Workout card. Pause freezes both the rest countdown and the session clock, so paused time is not counted in session minutes.
-- **Rest is tracked.** Each round saves the seconds actually rested (countdown time used, including +30s adds, stopping early if you skip; paused time left out). That number goes in the existing rest field of each set, so no Code.gs change is needed. A round where the timer never ran keeps the planned 75 s / 90 s, as before.
-- **Summary.** The Workout card shows total rest and how many times +30s was tapped. The save prompt shows them too, and a set's note says `rest +30s × N` when adds were used.
-- **Not included:** the sprint seconds are still typed in, not auto-timed.
-- **Tests:** new `tests/beta-train.js` (22 checks, all pass). `tests/run.js` (production file) still passes, unchanged.
+- **New $ Money tab (read-only).** Reads Budget 2026 and Bill Tracker 2026; it cannot change them.
+  - Income, spending vs plan, net cash flow, and plan used vs how much of the month is gone.
+  - **Month arrows** ‹ › step one month at a time without changing the day you are logging; they stop at the current month. Months before Jul 2026 have no budget tab and say so.
+  - **Over budget:** every line over its budget, biggest first. Spending on a $0-budget line says "no budget set".
+  - **Bills:** open bills first, then bills paid this month. **Every bill shows its due date** ("Due Nov 25"); open ones add "in 11 days", "today" or "3 days late". Due within 7 days is amber, late is red.
+  - **Saved & invested** and **Every line** (actual / budget with a bar).
+  - A month-by-month totals card was built and then removed at Fernando's request.
+- **Big red button (Train tab, every exercise).** **● Big button** on each block turns the screen into one red **DONE** button (about 78% of the screen). It stays up through rest and the next rounds until **Close**.
+- **Rest screen:** large countdown with **+30s**, **Pause** and **Skip rest**. Taps on the countdown do nothing; a double-tap inside 0.6 s is ignored. The screen stays awake while the big button is up (where the browser allows it).
+- **Pause workout:** on the big screen, the rest bar and the Workout card. Freezes the rest countdown and the session clock.
+- **Rest is tracked:** each round saves the seconds actually rested (adds included, pauses left out) in the existing rest column of the Workout Log. A round where the timer never ran keeps the planned 75 s / 90 s. The Workout card and save prompt show total rest and the number of +30s taps.
+- **Not included:** sprint seconds are still typed in; adding a transaction from the phone; net worth and loan balances.
+- **Backend (`Code.gs`):** new read-only GET action `budget`. Lines and totals are found by name in column A, so added rows do not break it. No new Google permission.
+- **Privacy:** anyone with the app's URL and token can read the budget numbers, the same as the food and journal data.
+- **Tests:** `tests/run.js` 40 checks, `tests/beta-train.js` 22, `tests/beta-money.js` 14. All pass.
 
 ## v6.4 "Morning Pages" (Nov 6, 2026)
 **Backend: Yes.** Paste the new `apps-script/Code.gs` and redeploy: **Deploy → Manage deployments → pencil → Version: New version → Deploy**.
