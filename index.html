@@ -142,6 +142,38 @@ textarea.f{min-height:64px;resize:vertical}
 .restbar.go{animation:rflash .45s 6 alternate}
 @keyframes rflash{to{background:var(--ok);color:#000}}
 .restbar button{background:rgba(255,255,255,.2);border:0;color:#fff;border-radius:10px;padding:6px 10px;font-weight:700}
+.restbar.paused{background:var(--mute)}
+/* v7.0 money tab */
+.mrow{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:14px}
+.mrow:first-child{border-top:0}
+.mrow .a{min-width:0} .mrow .a small{display:block;color:var(--mute);font-size:12px;margin-top:2px}
+.mrow .b{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:650}
+.mrow .b small{display:block;color:var(--mute);font-size:12px;font-weight:500;margin-top:2px}
+.mrow .b.bad{color:var(--warn)} .mrow .b.good{color:var(--ok)}
+.mnav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.mnav b{font-size:18px} .mnav button{border:0;background:var(--chip);color:var(--ink);border-radius:12px;width:48px;height:40px;font-size:20px;font-weight:700}
+.mnav button:disabled{opacity:.35}
+.due{display:inline-block;font-size:12px;font-weight:650;border-radius:999px;padding:3px 9px;background:var(--chip);margin-top:4px}
+.due.bad{background:var(--warn);color:#fff} .due.soon{background:var(--mid);color:#1c1916}
+.msec{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);font-weight:600;margin:14px 0 2px}
+/* v6.5 big button: full-screen round-done pad, rest countdown, pause */
+.mini.red{background:#d81f26;color:#fff}
+.pad{position:fixed;inset:0;z-index:30;background:var(--bg);display:flex;flex-direction:column;gap:10px;
+  padding:calc(10px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom))}
+.padtop{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:700;font-size:15px}
+.padtop span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.padtop button{border:0;background:var(--chip);color:var(--ink);border-radius:12px;padding:10px 16px;font-size:16px;font-weight:700;flex:none}
+.padbig{flex:1;min-height:0;border:0;border-radius:28px;background:#d81f26;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.padbig b{font-size:clamp(64px,24vw,190px);line-height:1;font-weight:800;font-variant-numeric:tabular-nums}
+.padbig small{font-size:16px;font-weight:600;opacity:.92;padding:0 16px;text-align:center}
+.pad[data-mode="work"] .padbig:active{background:#a91318}
+.pad[data-mode="rest"] .padbig{background:var(--protein)}
+.pad[data-mode="paused"] .padbig{background:var(--chip);color:var(--ink)}
+.pad[data-mode="paused"] .padbig b{font-size:clamp(44px,16vw,150px)}
+.pad.go .padbig{animation:rflash .45s 6 alternate}
+.padrow{display:flex;gap:10px}
+.padrow button{flex:1;border:0;border-radius:16px;padding:18px 6px;font-size:18px;font-weight:700;background:var(--chip);color:var(--ink);touch-action:manipulation}
 .tpl{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .tpl button{border:0;background:var(--chip);border-radius:14px;padding:10px;text-align:left;font-size:13px;font-weight:650;line-height:1.25}
 .tpl button small{display:block;color:var(--mute);font-weight:500;font-size:11px;margin-top:2px}
@@ -405,17 +437,24 @@ html.dash:not(.desk) main{max-width:640px}
 
 <!-- ================= TRAIN ================= -->
 <section id="v-train" class="hide">
-  <div class="restbar hide" id="restBar"><span id="restTxt">Rest 1:30</span><span><button id="restAdd">+30s</button> <button id="restStop">Done</button></span></div>
+  <div class="restbar hide" id="restBar"><span id="restTxt">Rest 1:30</span><span><button id="restAdd">+30s</button> <button id="restPause">Pause</button> <button id="restStop">Done</button></span></div>
+  <div class="pad hide" id="pad" data-mode="work">
+    <div class="padtop"><span id="padTitle"></span><button id="padX" aria-label="Close big button">✕ Close</button></div>
+    <button class="padbig" id="padDone"><b id="padBig">DONE</b><small id="padSub"></small></button>
+    <div class="padrow"><button id="padAdd">+30s</button><button id="padPause">Pause</button><button id="padSkip">Skip rest</button></div>
+  </div>
   <div class="card">
     <div class="lbl">Workout <span id="trStatus">not started</span></div>
     <div class="row">
       <div class="stat"><div class="v" id="trTime">0:00</div><div class="k">session time</div></div>
       <div class="stat"><div class="v" id="trSets">0</div><div class="k">sets · <span id="trVol">0</span> lb volume</div></div>
+      <div class="stat"><div class="v" id="trRest">0:00</div><div class="k">rest · <span id="trAdds">0</span> × +30s</div></div>
     </div>
     <div class="brow">
       <button class="mini" data-add="1">+ Exercise</button>
       <button class="mini" data-add="2">+ Superset</button>
       <button class="mini" data-add="3">+ Tri-set</button>
+      <button class="mini hide" id="trPause">Pause workout</button>
     </div>
   </div>
   <div id="blocks"></div>
@@ -507,6 +546,27 @@ html.dash:not(.desk) main{max-width:640px}
 </section>
 
 <!-- ================= JOURNAL ================= -->
+<!-- ================= MONEY (v7.0, read-only) ================= -->
+<section id="v-money" class="hide">
+  <div class="card">
+    <div class="lbl">Money <span id="mnStatus"></span></div>
+    <div class="mnav"><button id="mnPrev" aria-label="Previous month">‹</button><b id="mnMonth">–</b><button id="mnNext" aria-label="Next month">›</button></div>
+    <div class="row">
+      <div class="stat"><div class="v" id="mnIn">–</div><div class="k">income</div></div>
+      <div class="stat"><div class="v" id="mnOut">–</div><div class="k">spent of <span id="mnPlan">–</span> plan</div></div>
+      <div class="stat"><div class="v" id="mnNet">–</div><div class="k">net cash flow</div></div>
+    </div>
+    <div class="track" style="margin-top:12px"><div class="fill" id="mnBar" style="width:0"></div></div>
+    <div class="note" id="mnPace"></div>
+  </div>
+  <div class="card"><div class="lbl">Over budget <span id="mnOverN"></span></div><div id="mnOver"></div></div>
+  <div class="card"><div class="lbl">Bills <span id="mnBillN"></span></div><div id="mnBills"></div></div>
+  <div class="card"><div class="lbl">Saved &amp; invested</div><div id="mnSave"></div></div>
+  <div class="card"><div class="lbl">Every line <span>actual / budget</span></div><div id="mnLines"></div></div>
+  <button class="btn" id="mnRefresh">Refresh from the budget sheet</button>
+  <div class="note" style="padding:0 4px 8px">Read-only. Numbers come from your Budget 2026 and Bill Tracker sheets; nothing here can change them.</div>
+</section>
+
 <section id="v-jour" class="hide">
   <div class="card">
     <div class="lbl">16 Questions</div>
@@ -566,6 +626,7 @@ html.dash:not(.desk) main{max-width:640px}
   <button data-v="nut"><span class="e">❖</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.4 4.9 5.3.8-3.9 3.8.9 5.3L12 15.3 7.3 17.8l.9-5.3L4.3 8.7l5.3-.8z"/></svg><span class="tl">Nutrients</span></button>
   <button data-v="train"><span class="e">🏋︎</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6M6 7v10M18 7v10M21 9v6M6 12h12"/></svg><span class="tl">Train</span></button>
   <button data-v="body"><span class="e">⚖︎</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h14l-1.5-11h-11z"/><circle cx="12" cy="6" r="2.5"/><path d="M12 13l2-2"/></svg><span class="tl">Body</span></button>
+  <button data-v="money"><span class="e">$</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5v19M16.5 7.5c0-1.9-2-3-4.5-3s-4.5 1.1-4.5 3.2c0 4.6 9 2.2 9 6.8 0 2.1-2 3.2-4.5 3.2s-4.5-1.2-4.5-3.2"/></svg><span class="tl">Money</span></button>
   <button data-v="out"><span class="e">☾</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span class="tl">Check-out</span></button>
 </nav>
 
@@ -692,7 +753,7 @@ function demoDay(date){
 
 /* ======================= STATE ======================= */
 // Bump with every release; matches CHANGELOG.md.
-const APP_VERSION='v6.4', APP_VERSION_NAME='Morning Pages';
+const APP_VERSION='v7.1', APP_VERSION_NAME='Money';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const LS={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 let cfg=LS.get('fuel.cfg',{url:'',token:''});
@@ -753,7 +814,7 @@ function setSync(t,bad){ setTimeout(()=>{ if(typeof renderGlance==='function'&&s
   el.textContent=t||(queue.length?queue.length+' waiting to save':'Synced'); el.className='sync'+(bad?' bad':''); }
 async function load(){
   $('#demoBanner').classList.toggle('hide',live());
-  loadPlan();
+  loadPlan(); mnSel=null; loadMoney();
   if(!live()){ state.day=demoDay(state.date); render(); setSync(); return; }
   const cached=LS.get('fuel.day.'+state.date,null); if(cached){state.day=cached; render();}
   setSync('Loading…');
@@ -1073,7 +1134,7 @@ const TPLS=[
  {t:'Finisher',d:'Farmer carry + bag flow',b:[["Farmer's carry",'Bag get-up, carry & slam']]},
 ];
 const lib=n=>LIB.find(x=>x.n===n)||{n,g:'Other',eq:['DB'],m:'rw'};
-let tr=null, trTick=null, rest={end:0,t:null};
+let tr=null, trTick=null, rest={on:false,go:false,end:0,left:0,from:0,pausedMs:0,adds:0,b:null,ri:-1,t:null,goT:null}, pad={open:false,b:null,tap:0,wl:null};
 function trKey(){ return 'fuel.train.'+state.date; }
 function trLoad(){ tr=LS.get(trKey(),null)||{date:state.date,start:null,blocks:[],saved:false}; }
 function trSaveLS(){ LS.set(trKey(),tr); }
@@ -1145,42 +1206,98 @@ function renderTrain(){
         f.forEach(ff=>{ if(!ff){h+='<span></span>';return;} h+=`<input type="number" inputmode="decimal" placeholder="${ff[1]}" value="${v[ff[0]]??''}" data-in="${bi},${ri},${ei},${ff[0]}" aria-label="${ff[1]}">`; });
         h+='</div>'; });
       h+='</div>'; });
-    h+=`<div class="brow"><button class="mini pri" data-round="${bi}">✓ Round done → rest</button><button class="mini" data-copy="${bi}">+ Round</button></div>`;
+    h+=`<div class="brow"><button class="mini red" data-pad="${bi}">● Big button</button><button class="mini pri" data-round="${bi}">✓ Round done → rest</button><button class="mini" data-copy="${bi}">+ Round</button></div>`;
     el.innerHTML=h; box.appendChild(el); });
   // events
   box.querySelectorAll('[data-in]').forEach(i=>i.oninput=()=>{ const [bi,ri,ei,k]=i.dataset.in.split(','); const b=tr.blocks[bi];
     b.rounds[ri][ei]={...b.rounds[ri][ei],[k]:i.value===''?'':Number(i.value)}; trSaveLS(); trStats(); });
   box.querySelectorAll('[data-eq]').forEach(btn=>btn.onclick=()=>{ const [bi,ei,q]=btn.dataset.eq.split(','); tr.blocks[bi].ex[ei].eq=q; trSaveLS(); renderTrain(); });
-  box.querySelectorAll('[data-del]').forEach(btn=>btn.onclick=()=>{ if(confirm('Remove this block?')){ tr.blocks.splice(+btn.dataset.del,1); trSaveLS(); renderTrain(); } });
-  box.querySelectorAll('[data-delr]').forEach(btn=>btn.onclick=()=>{ const b=tr.blocks[+btn.dataset.delr]; b.rounds.pop(); b.done=Math.min(b.done,b.rounds.length); trSaveLS(); renderTrain(); });
+  box.querySelectorAll('[data-del]').forEach(btn=>btn.onclick=()=>{ if(confirm('Remove this block?')){ const b=tr.blocks[+btn.dataset.del]; if(rest.b===b) restCancel(); tr.blocks.splice(+btn.dataset.del,1); trSaveLS(); renderTrain(); } });
+  box.querySelectorAll('[data-delr]').forEach(btn=>btn.onclick=()=>{ const b=tr.blocks[+btn.dataset.delr]; b.rounds.pop(); b.done=Math.min(b.done,b.rounds.length);
+    if(b.rest) b.rest.length=Math.min(b.rest.length,b.rounds.length); if(b.adds) b.adds.length=Math.min(b.adds.length,b.rounds.length); trSaveLS(); renderTrain(); });
+  box.querySelectorAll('[data-pad]').forEach(btn=>btn.onclick=()=>padOpen(tr.blocks[+btn.dataset.pad]));
   box.querySelectorAll('[data-copy]').forEach(btn=>btn.onclick=()=>{ const b=tr.blocks[+btn.dataset.copy]; b.rounds.push(b.rounds[b.rounds.length-1].map(v=>({...v}))); trSaveLS(); renderTrain(); });
-  box.querySelectorAll('[data-round]').forEach(btn=>btn.onclick=()=>{ const b=tr.blocks[+btn.dataset.round];
-    b.done=Math.max(b.done,b.rounds.length); b.rounds.push(b.rounds[b.rounds.length-1].map(v=>({...v}))); trSaveLS(); renderTrain(); startRest(b.ex.length>1?90:75); });
+  box.querySelectorAll('[data-round]').forEach(btn=>btn.onclick=()=>roundDone(tr.blocks[+btn.dataset.round]));
   $('#tpls').innerHTML=TPLS.map((t,i)=>`<button data-tpl="${i}">${t.t}<small>${t.d}</small></button>`).join('');
   $$('#tpls button').forEach(b=>b.onclick=()=>TPLS[+b.dataset.tpl].b.forEach(names=>addBlock(names)));
-  $('#trStatus').textContent=tr.saved?'saved ✓':tr.start?'in progress':'not started';
-  trStats(); renderWkSets();
+  $('#trStatus').textContent=tr.saved?'saved ✓':tr.pauseAt?'paused':tr.start?'in progress':'not started';
+  trStats(); renderWkSets(); restPaint();
 }
+// One place for "round done" so the small button and the big red button do exactly the same thing.
+function roundDone(b){ if(!b) return; restFinish(false); const ri=b.rounds.length-1;
+  b.done=Math.max(b.done,b.rounds.length); b.rounds.push(b.rounds[b.rounds.length-1].map(v=>({...v}))); trSaveLS(); renderTrain(); startRest(b.ex.length>1?90:75,b,ri); }
 // Only rounds marked done count; if none marked, all rounds count.
 function trSets(t){ const out=[]; (t||tr).blocks.forEach((b,bi)=>{ const n=b.done||b.rounds.length; const label=b.ex.length>1?(b.ex.length===2?'Superset ':'Tri-set ')+String.fromCharCode(65+bi)+': '+b.ex.map(e=>e.n).join(' + '):'';
   for(let ri=0;ri<n;ri++) b.ex.forEach((e,ei)=>{ const v=b.rounds[ri][ei]||{}, x=lib(e.n);
     const has = x.m==='carry'? (v.w||v.dist) : (v.reps||v.time);
     if(!has) return;
-    const notes=[label, x.eq.length>1?EQN[e.eq]||e.eq:''].filter(Boolean).join(' · ');
-    out.push({exercise:e.n,group:x.g,set:ri+1,reps:x.m==='carry'?'':v.reps,weight:x.m==='bag'?Number(e.eq)||'':v.w,time:v.time||'',distance:v.dist||'',rest:b.ex.length>1?90:75,effort:'',notes}); }); }); return out; }
-function trStats(){ const s=trSets(); $('#trSets').textContent=s.length; $('#trVol').textContent=Math.round(s.reduce((a,x)=>a+(Number(x.reps)||0)*(Number(x.weight)||0),0)).toLocaleString(); }
+    const adds=(b.adds&&b.adds[ri])||0, timed=b.rest&&b.rest[ri]!=null;
+    const notes=[label, x.eq.length>1?EQN[e.eq]||e.eq:'', adds?'rest +30s × '+adds:''].filter(Boolean).join(' · ');
+    out.push({exercise:e.n,group:x.g,set:ri+1,reps:x.m==='carry'?'':v.reps,weight:x.m==='bag'?Number(e.eq)||'':v.w,time:v.time||'',distance:v.dist||'',rest:timed?b.rest[ri]:(b.ex.length>1?90:75),effort:'',notes}); }); }); return out; }
+// Rest actually taken this session (seconds) and how many times +30s was tapped. Counted once per round, not once per exercise.
+function trRest(t){ let sec=0, adds=0; (t||tr).blocks.forEach(b=>{ (b.rest||[]).forEach(v=>sec+=Number(v)||0); (b.adds||[]).forEach(v=>adds+=Number(v)||0); });
+  if(rest.on&&(!t||t===tr)){ sec+=restSpent(); adds+=rest.adds; } return {sec,adds}; }
+const mmss=s=>{ s=Math.max(0,Math.round(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); };
+function trStats(){ const s=trSets(); $('#trSets').textContent=s.length; $('#trVol').textContent=Math.round(s.reduce((a,x)=>a+(Number(x.reps)||0)*(Number(x.weight)||0),0)).toLocaleString();
+  const r=trRest(); $('#trRest').textContent=mmss(r.sec); $('#trAdds').textContent=r.adds; }
+// Session clock leaves out paused time.
+function trPausedMs(){ return tr?(tr.paused||0)+(tr.pauseAt?Date.now()-tr.pauseAt:0):0; }
+function trElapsed(){ return tr&&tr.start?Math.max(0,(tr.end||Date.now())-tr.start-trPausedMs()):0; }
 function startTick(){ clearInterval(trTick); trTick=setInterval(()=>{ if(!tr||!tr.start){ $('#trTime').textContent='0:00'; return; }
-  const end=tr.end||Date.now(); const m=Math.floor((end-tr.start)/60000); $('#trTime').textContent=Math.floor(m/60)+':'+String(m%60).padStart(2,'0'); },1000); }
+  const m=Math.floor(trElapsed()/60000); $('#trTime').textContent=Math.floor(m/60)+':'+String(m%60).padStart(2,'0'); },1000); }
 // Beep needs a tap first on iPhone, so the "Round done" tap unlocks sound. Ring/silent switch still applies.
 let actx=null;
 function unlockAudio(){ try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); if(actx.state==='suspended') actx.resume(); }catch(e){} }
 function beep(){ if(!actx) return; try{ const t0=actx.currentTime; [0,.22,.44].forEach((t,i)=>{ const o=actx.createOscillator(), g=actx.createGain();
     o.frequency.value=i===2?1320:880; g.gain.setValueAtTime(.0001,t0+t); g.gain.exponentialRampToValueAtTime(.35,t0+t+.02); g.gain.exponentialRampToValueAtTime(.0001,t0+t+.18);
     o.connect(g); g.connect(actx.destination); o.start(t0+t); o.stop(t0+t+.2); }); }catch(e){} }
-function startRest(sec){ unlockAudio(); rest.end=Date.now()+sec*1000; const bar=$('#restBar'); bar.classList.remove('hide','go'); clearInterval(rest.t);
-  rest.t=setInterval(()=>{ const left=Math.round((rest.end-Date.now())/1000); if(left<=0){ $('#restTxt').textContent='Go! Next round'; bar.classList.add('go'); beep(); if(navigator.vibrate) navigator.vibrate(300); clearInterval(rest.t); setTimeout(()=>bar.classList.add('hide'),4000); return; }
-    $('#restTxt').textContent='Rest '+Math.floor(left/60)+':'+String(left%60).padStart(2,'0'); },250); }
-$('#restAdd').onclick=()=>{ rest.end+=30000; }; $('#restStop').onclick=()=>{ clearInterval(rest.t); $('#restBar').classList.add('hide'); };
+/* ---- Rest timer (v6.5): counts down, can be paused, and records the seconds actually rested per round ---- */
+const isPaused=()=>!!(tr&&tr.pauseAt);
+function restLeftMs(){ return rest.on?(isPaused()?rest.left:rest.end-Date.now()):0; }
+// Seconds of rest used so far in the running rest (paused time left out).
+function restSpent(){ if(!rest.on) return 0; const now=isPaused()?tr.pauseAt:Math.min(Date.now(),rest.end); return Math.max(0,Math.round((now-rest.from-rest.pausedMs)/1000)); }
+function startRest(sec,b,ri){ unlockAudio(); restFinish(false); clearTimeout(rest.goT); clearInterval(rest.t);
+  rest={...rest,on:true,go:false,end:Date.now()+sec*1000,left:sec*1000,from:Date.now(),pausedMs:0,adds:0,b:b||null,ri:ri==null?-1:ri};
+  rest.t=setInterval(restTick,250); restPaint(); }
+function restTick(){ if(!rest.on){ clearInterval(rest.t); return; } if(isPaused()) return; if(rest.end-Date.now()<=0){ restFinish(true); return; } restPaint(); trStats(); }
+// Ends the running rest and writes what was actually rested onto the round. timeUp = the countdown reached zero.
+function restFinish(timeUp){ if(!rest.on) return; const secs=restSpent(); rest.on=false; clearInterval(rest.t);
+  const b=rest.b; if(b&&tr&&tr.blocks.includes(b)&&rest.ri>=0){ b.rest=b.rest||[]; b.adds=b.adds||[]; b.rest[rest.ri]=secs; b.adds[rest.ri]=rest.adds; trSaveLS(); }
+  if(timeUp){ rest.go=true; beep(); if(navigator.vibrate) navigator.vibrate(300); clearTimeout(rest.goT); rest.goT=setTimeout(()=>{ rest.go=false; restPaint(); },4000); }
+  restPaint(); trStats(); }
+function restCancel(){ rest.on=false; rest.go=false; clearInterval(rest.t); clearTimeout(rest.goT); restPaint(); }
+function restAdd30(){ if(!rest.on) return; if(isPaused()) rest.left+=30000; else rest.end+=30000; rest.adds++; restPaint(); trStats(); }
+// Pause freezes both the rest countdown and the session clock. Works with or without a rest running.
+function togglePause(){ if(!tr||!tr.start||tr.end) return; unlockAudio();
+  if(tr.pauseAt){ const d=Date.now()-tr.pauseAt; tr.paused=(tr.paused||0)+d; tr.pauseAt=null; if(rest.on){ rest.end=Date.now()+rest.left; rest.pausedMs+=d; } }
+  else{ tr.pauseAt=Date.now(); if(rest.on) rest.left=Math.max(0,rest.end-Date.now()); }
+  trSaveLS(); $('#trStatus').textContent=tr.saved?'saved ✓':tr.pauseAt?'paused':'in progress'; restPaint(); }
+function restPaint(){ const bar=$('#restBar'), paused=isPaused(), on=rest.on, active=!!(tr&&tr.start&&!tr.end);
+  bar.classList.toggle('hide',!(on||paused||rest.go)); bar.classList.toggle('go',rest.go&&!on&&!paused); bar.classList.toggle('paused',paused);
+  $('#restTxt').textContent=paused?(on?'Paused · rest '+mmss(restLeftMs()/1000)+' left':'Workout paused'):on?'Rest '+mmss(restLeftMs()/1000):'Go! Next round';
+  $('#restAdd').classList.toggle('hide',!on); $('#restStop').classList.toggle('hide',!on||paused); $('#restPause').classList.toggle('hide',!active); $('#restPause').textContent=paused?'Resume':'Pause';
+  const tp=$('#trPause'); tp.classList.toggle('hide',!active); tp.textContent=paused?'Resume workout':'Pause workout';
+  padPaint(); }
+$('#restAdd').onclick=restAdd30; $('#restStop').onclick=()=>restFinish(false); $('#restPause').onclick=togglePause; $('#trPause').onclick=togglePause;
+/* ---- Big red button (v6.5): one near-full-screen target for "round done", for any exercise ---- */
+function padOpen(b){ if(!b) return; unlockAudio(); pad.open=true; pad.b=b; pad.tap=Date.now(); padWake(true); padPaint(); }
+function padClose(){ pad.open=false; pad.b=null; padWake(false); padPaint(); }
+// Keeps the phone screen awake while the big button is up (where the browser supports it).
+function padWake(on){ try{ if(on){ if(navigator.wakeLock&&!pad.wl) navigator.wakeLock.request('screen').then(w=>{ pad.wl=w; w.addEventListener('release',()=>{ pad.wl=null; }); if(!pad.open) w.release(); }).catch(()=>{}); }
+  else if(pad.wl){ pad.wl.release(); pad.wl=null; } }catch(e){} }
+document.addEventListener('visibilitychange',()=>{ if(pad.open&&document.visibilityState==='visible') padWake(true); });
+function padPaint(){ const el=$('#pad'); if(pad.open&&(!tr||!tr.blocks.includes(pad.b))){ pad.open=false; pad.b=null; padWake(false); }
+  el.classList.toggle('hide',!pad.open); if(!pad.open) return;
+  const b=pad.b, paused=isPaused(), on=rest.on, mode=paused?'paused':on?'rest':'work'; el.dataset.mode=mode; el.classList.toggle('go',rest.go&&mode==='work');
+  $('#padTitle').textContent=b.ex.map(e=>e.n).join(' + ');
+  $('#padBig').textContent=mode==='work'?'DONE':mode==='rest'?mmss(restLeftMs()/1000):'PAUSED';
+  $('#padSub').textContent=mode==='work'?'Round '+b.rounds.length+' · tap anywhere here when the round is done'
+    :mode==='rest'?'Rest'+(rest.ri>=0?' after round '+(rest.ri+1):'')+(rest.adds?' · +30s × '+rest.adds:'')
+    :(on?'Rest '+mmss(restLeftMs()/1000)+' left · ':'')+'clock stopped · tap Resume';
+  $('#padAdd').classList.toggle('hide',!on); $('#padSkip').classList.toggle('hide',!on||paused); $('#padPause').textContent=paused?'Resume':'Pause'; }
+// The 600 ms guard stops a tired double-tap from logging two rounds.
+$('#padDone').onclick=()=>{ if(!pad.open||$('#pad').dataset.mode!=='work') return; const now=Date.now(); if(now-pad.tap<600) return; pad.tap=now; roundDone(pad.b); };
+$('#padAdd').onclick=restAdd30; $('#padSkip').onclick=()=>{ pad.tap=Date.now(); restFinish(false); }; $('#padPause').onclick=()=>{ pad.tap=Date.now(); togglePause(); }; $('#padX').onclick=padClose;
 // picker
 let pick={need:1,sel:[]};
 function openPick(n){ pick={need:n,sel:[]}; $('#pickTitle').textContent=n===1?'Pick an exercise':n===2?'Pick 2 for the superset':'Pick 3 for the tri-set';
@@ -1198,11 +1315,13 @@ $('#pickOk').onclick=()=>{ if(!pick.sel.length) return; addBlock(pick.sel); clos
 function sessionType(sets){ const gs=new Set(sets.map(s=>s.group));
   const cond=[...gs].every(g=>g==='Conditioning'||g==='Carries'); if(cond) return 'HIIT';
   if(gs.has('Conditioning')||gs.has('Carries')) return 'Mixed'; return 'Weights'; }
-$('#trSave').onclick=()=>{ const sets=trSets(); if(!sets.length){ toast('Nothing to save yet'); return; }
-  const mins=tr.start?Math.max(1,Math.round(((tr.end||Date.now())-tr.start)/60000)):'';
-  const st=sessionType(sets);
-  if(!confirm(`${tr.saved?'Update the saved workout:':'Save'} ${sets.length} sets (${st}, ${mins} min)?`)) return;
-  tr.sid=tr.sid||('W'+Date.now().toString(36)); tr.end=tr.end||Date.now(); tr.saved=true; trSaveLS();
+$('#trSave').onclick=()=>{ let sets=trSets(); if(!sets.length){ toast('Nothing to save yet'); return; }
+  const mins=tr.start?Math.max(1,Math.round(trElapsed()/60000)):'';
+  const st=sessionType(sets), rr=trRest();
+  if(!confirm(`${tr.saved?'Update the saved workout:':'Save'} ${sets.length} sets (${st}, ${mins} min${rr.sec?', rest '+mmss(rr.sec)+(rr.adds?', +30s × '+rr.adds:''):''})?`)) return;
+  restFinish(false); sets=trSets();   // a rest still running is closed out and counted as rested so far
+  if(tr.pauseAt){ tr.paused=(tr.paused||0)+(Date.now()-tr.pauseAt); tr.pauseAt=null; }
+  tr.sid=tr.sid||('W'+Date.now().toString(36)); tr.end=tr.end||Date.now(); tr.saved=true; trSaveLS(); padClose();
   tr.blocks.forEach(b=>b.ex.forEach((e,ei)=>{ const r=b.rounds[Math.max(0,(b.done||b.rounds.length)-1)][ei]; setLast(e.n,{...r,eq:e.eq}); }));
   const hist=LS.get('fuel.trainHist',[]).filter(h=>h.date!==state.date); hist.push({date:state.date,sets:sets.map(s=>({g:s.group}))}); LS.set('fuel.trainHist',hist.slice(-60));
   if(live()){ queue=queue.filter(q=>!(q.action==='addSets'&&q.session===tr.sid&&!inflight.has(q)));   // newer save replaces a waiting one
@@ -1221,6 +1340,73 @@ function renderWkSets(){
     + `<div class="nu"><div class="t"><span>Carries + conditioning</span><span><b>${(counts.Carries||0)+(counts.Conditioning||0)}</b> sets</span></div></div>`;
   $('#wkSetsNote').textContent='Week runs Mon–Sun. Each exercise in a superset round counts as one set for its muscle.'+(live()?'':' Demo counts only workouts saved on this phone.');
 }
+
+
+/* ======================= MONEY (v7.0) ======================= */
+// Read-only view of the month's budget vs actual and bills. Follows the date at the top (its month).
+// Demo numbers below are made up. Real numbers only ever come from the backend "budget" action.
+const DEMO_MONEY={found:true,billsFound:true,
+  lines:[{section:'income',name:'Salary (net pay)',budget:5000,actual:2500},
+    {section:'necessary',name:'Mortgage',budget:1500,actual:1500},{section:'necessary',name:'Car payment',budget:400,actual:400},{section:'necessary',name:'Electric',budget:150,actual:171.4},
+    {section:'necessary',name:'Food & groceries',budget:600,actual:412.37},{section:'necessary',name:'Car maintenance',budget:0,actual:64.5},{section:'necessary',name:'Transport',budget:200,actual:118},
+    {section:'discretionary',name:'Dining out',budget:150,actual:187.25},{section:'discretionary',name:'Streaming',budget:30,actual:19.99},{section:'discretionary',name:'Gifts',budget:50,actual:0},
+    {section:'investment',name:'Bitcoin DCA',budget:300,actual:150},{section:'investment',name:'School',budget:175,actual:175}],
+  totals:{income:{budget:5000,actual:2500},necessary:{budget:2850,actual:2666.27},discretionary:{budget:230,actual:207.24},investment:{budget:475,actual:325}},
+  net:{budget:1445,actual:-698.51},saved:{budget:1100,actual:560},hsaPaid:42.1,
+  bills:[{vendor:'Sample Electric',amount:171.4,due:'-05',status:'Paid',paidOn:'-04',paid:true},{vendor:'Sample Phone',amount:120,due:'-25',status:'Invoiced',paidOn:'',paid:false},{vendor:'Sample Water',amount:88.5,due:'-28',status:'Invoiced',paidOn:'',paid:false}]};
+let money=null, mnSel=null;   // mnSel = month picked on the Money tab ('YYYY-MM'); null = month of the date at the top
+const usd=(n,dec)=>n==null||isNaN(n)?'–':(n<0?'−':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:dec?2:0,maximumFractionDigits:dec?2:0});
+const mnMonth=()=>mnSel||state.date.slice(0,7);
+function mnStep(n){ const [y,m]=mnMonth().split('-').map(Number), d=new Date(y,m-1+n,1); mnSel=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); loadMoney(); }
+function mnLabel(){ const [y,m]=mnMonth().split('-').map(Number); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]+' '+y; }
+async function loadMoney(force){
+  const ym=mnMonth(), k='fuel.money.'+ym;
+  if(!live()){ money={...DEMO_MONEY,month:mnLabel(),bills:DEMO_MONEY.bills.map(b=>({...b,due:ym+b.due,paidOn:b.paidOn?ym+b.paidOn:''}))}; renderMoney(); $('#mnStatus').textContent=mnLabel()+' · sample numbers'; return; }
+  money=LS.get(k,null); renderMoney();
+  if($('#v-money').classList.contains('hide')&&!force) return;            // only fetch when the tab is open
+  if(money&&!force&&Date.now()-(money.at||0)<600e3) return;                // fresh enough (10 min)
+  $('#mnStatus').textContent='Loading…';
+  try{ const j=await api({action:'budget',date:ym+'-01'}); j.at=Date.now(); LS.set(k,j); if(mnMonth()===ym){ money=j; renderMoney(); } }
+  catch(e){ $('#mnStatus').textContent=/Unknown action/.test(e.message)?'Backend needs the v7.0 Code.gs':'Could not load: '+e.message; }
+}
+function renderMoney(){
+  const m=money, T=(m&&m.totals)||{}, g=(k,f)=>T[k]&&T[k][f]!=null?T[k][f]:null;
+  $('#mnStatus').textContent=m?(m.month||mnLabel())+(m.at?' · updated '+new Date(m.at).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):''):mnLabel();
+  $('#mnMonth').textContent=mnLabel(); $('#mnNext').disabled=mnMonth()>=todayKey().slice(0,7);
+  if(!m||!m.found){ ['mnIn','mnOut','mnNet','mnPlan'].forEach(i=>$('#'+i).textContent='–'); $('#mnBar').style.width='0'; $('#mnPace').textContent=m?'No budget tab for '+(m.month||mnLabel())+' in the Budget sheet.':'Open this tab while online to load your numbers.';
+    ['mnOver','mnSave','mnLines'].forEach(i=>$('#'+i).innerHTML=''); $('#mnOverN').textContent=''; if(!m){ $('#mnBills').innerHTML=''; $('#mnBillN').textContent=''; return; } }
+  else{
+    const spent=(g('necessary','actual')||0)+(g('discretionary','actual')||0), plan=(g('necessary','budget')||0)+(g('discretionary','budget')||0), net=m.net?m.net.actual:null;
+    $('#mnIn').textContent=usd(g('income','actual')); $('#mnOut').textContent=usd(spent); $('#mnPlan').textContent=usd(plan);
+    $('#mnNet').textContent=usd(net); $('#mnNet').style.color=net==null?'':net<0?'var(--warn)':'var(--ok)';
+    const p=plan?spent/plan:0; $('#mnBar').style.width=Math.min(100,p*100)+'%'; $('#mnBar').style.background=p>1?'var(--warn)':p>0.85?'var(--mid)':'var(--ok)';
+    // pace: share of the month gone vs share of the plan spent (current month only)
+    const [y,mo]=mnMonth().split('-').map(Number), dim=new Date(y,mo,0).getDate(), isNow=todayKey().slice(0,7)===mnMonth(), day=isNow?Number(todayKey().slice(8)):dim;
+    $('#mnPace').textContent=plan?Math.round(p*100)+'% of the spending plan used'+(isNow?' · day '+day+' of '+dim+' ('+Math.round(100*day/dim)+'% of the month)':'')+' · '+(plan-spent>=0?usd(plan-spent)+' left':usd(spent-plan)+' over'):'';
+    const sp=m.lines.filter(l=>l.section==='necessary'||l.section==='discretionary');
+    const over=sp.filter(l=>(l.actual||0)>(l.budget||0)+0.005).sort((a,b)=>((b.actual||0)-(b.budget||0))-((a.actual||0)-(a.budget||0)));
+    $('#mnOverN').textContent=over.length?over.length+' line'+(over.length>1?'s':''):'';
+    $('#mnOver').innerHTML=over.length?over.map(l=>`<div class="mrow"><div class="a">${esc(l.name)}<small>${usd(l.actual,1)} spent · ${l.budget?usd(l.budget,1)+' budget':'no budget set'}</small></div><div class="b bad">+${usd((l.actual||0)-(l.budget||0),1)}</div></div>`).join(''):'<div class="note" style="margin:0">Nothing over budget.</div>';
+    const btc=m.lines.find(l=>/bitcoin/i.test(l.name)), inv=T.investment;
+    $('#mnSave').innerHTML=[['True savings (Roth + HSA + Bitcoin)',m.saved],['Bitcoin bought',btc],['All investment lines',inv]].filter(x=>x[1]).map(x=>`<div class="mrow"><div class="a">${x[0]}</div><div class="b">${usd(x[1].actual,1)}<small>of ${usd(x[1].budget,1)}</small></div></div>`).join('')
+      +(m.hsaPaid?`<div class="mrow"><div class="a">Health care paid from HSA<small>info only, not in the totals</small></div><div class="b">${usd(m.hsaPaid,1)}</div></div>`:'');
+    const names={income:'Income',necessary:'Necessary',discretionary:'Discretionary',investment:'Investment'};
+    $('#mnLines').innerHTML=Object.keys(names).map(sec=>{ const ls=m.lines.filter(l=>l.section===sec); if(!ls.length) return ''; const t=T[sec]||{};
+      return `<div class="msec">${names[sec]} · ${usd(t.actual)} / ${usd(t.budget)}</div>`+ls.map(l=>{ const a=l.actual||0, b=l.budget||0, q=b?a/b:(a?1.01:0), inc=sec==='income'||sec==='investment';
+        const col=inc?(q>=1?'var(--ok)':'var(--mid)'):(q>1?'var(--warn)':q>0.85?'var(--mid)':'var(--ok)');
+        return `<div class="nu"><div class="t"><span>${esc(l.name)}</span><span><b>${usd(a,1)}</b> / ${usd(b)}</span></div><div class="track"><div class="fill" style="width:${Math.min(100,q*100)}%;background:${col}"></div></div></div>`; }).join(''); }).join('');
+  }
+  const bills=m.bills||[], open=bills.filter(b=>!b.paid), paid=bills.filter(b=>b.paid), sum=a=>a.reduce((t,b)=>t+(b.amount||0),0), tk=todayKey();
+  $('#mnBillN').textContent=m.billsFound===false?'':usd(sum(open),1)+' open · '+usd(sum(paid),1)+' paid';
+  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], dshort=k=>k?MON[Number(k.slice(5,7))-1]+' '+Number(k.slice(8,10)):'no date';
+  const days=k=>Math.round((new Date(k+'T12:00:00')-new Date(tk+'T12:00:00'))/864e5);
+  $('#mnBills').innerHTML=m.billsFound===false?'<div class="note" style="margin:0">Bill Tracker not found.</div>':!bills.length?'<div class="note" style="margin:0">No open bills and none this month.</div>'
+    :open.concat(paid).map(b=>{ const n=b.due?days(b.due):null, late=!b.paid&&n!=null&&n<0, soon=!b.paid&&n!=null&&n>=0&&n<=7;
+      const when=b.paid?'':n==null?'':late?' · '+(-n)+' day'+(n===-1?'':'s')+' late':n===0?' · today':' · in '+n+' day'+(n===1?'':'s');
+      return `<div class="mrow"><div class="a">${esc(b.vendor)}<small>${b.paid?'Paid'+(b.paidOn?' '+dshort(b.paidOn):''):esc(b.status||'Open')}</small><span class="due ${late?'bad':soon?'soon':''}">Due ${dshort(b.due)}${when}</span></div><div class="b ${b.paid?'good':late?'bad':''}">${usd(b.amount,1)}</div></div>`; }).join('');
+}
+$('#mnPrev').onclick=()=>mnStep(-1); $('#mnNext').onclick=()=>mnStep(1);
+$('#mnRefresh').onclick=()=>loadMoney(true);
 
 
 /* ======================= DAILY PLAN ======================= */
@@ -1336,6 +1522,7 @@ $('#saveJour').onclick=async()=>{
   // flush() will bust fuel.plan.{date} and call loadPlan() on success.
   toast('Journal queued');
   $('#jourNote').textContent='Saving…';
+  renderJour();
 };
 
 /* ======================= DRIVE DAY (🚗 button) ======================= */
@@ -1468,7 +1655,7 @@ $('#verNote').innerHTML=`Pillars Fuel <b>${APP_VERSION}</b> "${APP_VERSION_NAME}
 $('#saveSet').onclick=()=>{ cfg={url:$('#sUrl').value.trim(),token:$('#sTok').value.trim()}; LS.set('fuel.cfg',cfg); LS.set('fuel.bootAt',0);
   if(!live()){ Object.assign(state,{goals:DEMO_GOALS,foods:DEMO_FOODS,targets:DEMO_TARGETS}); } load(); toast(live()?'Connecting…':'Demo mode'); };
 $('#refreshData').onclick=()=>{ if(!live()){ toast('Demo mode'); return; } LS.set('fuel.bootAt',0); toast('Refreshing…'); load(); };
-function show(v){ ['today','log','nut','train','body','out','jour'].forEach(x=>$('#v-'+x).classList.toggle('hide',x!==v)); $$('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+function show(v){ if(v==='money') setTimeout(()=>loadMoney(),0); ['today','log','nut','train','body','out','jour','money'].forEach(x=>$('#v-'+x).classList.toggle('hide',x!==v)); $$('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
   window.scrollTo(0,0); const sk=LS.get('fuel.skipped',[]); $('#queueNote').innerHTML=(queue.length?queue.length+' change(s) waiting to save.':'')+(sk.length?'<br>Last skipped: '+sk.map(esc).join('<br>'):''); }
 $$('nav button').forEach(b=>b.onclick=()=>show(b.dataset.v));
 $('#goLog').onclick=()=>show('log');

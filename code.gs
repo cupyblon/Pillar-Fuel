@@ -15,8 +15,9 @@
  *    (Training min, pulled from Strength > Sessions) are formulas that fill their whole column;
  *    typing into any cell below them breaks the column with #REF!.
  *  - Pillars Tracker > Daily Log    : check-out columns, matched by header name.
- *  - Daily folder "YYYY-MM-DD Daily Plan" docs: READ via GET ?action=plan&date=...
- *                                                WRITE via POST saveJournal (MORNING JOURNAL section only).
+ *  - Daily Plan docs ("YYYY-MM-DD Daily Plan" in the Daily folder):
+ *      READ  via GET ?action=plan&date=...
+ *      WRITE via saveJournal (MORNING JOURNAL section only; touched fields; never deletes).
  *  - Strength Training > Workout Log: A-K, one row per set (L-N are formulas);
  *                                     Notes end with "#W…" so re-saving a workout replaces it.
  *  - Strength Training > Sessions   : A-D, one row per workout day (E-G are formulas).
@@ -27,6 +28,9 @@
 const NUTRITION_ID = '1mAkG128NSk-IzEJg-EZTNbNBz7YmmhnlBjJJAYMoyhA';
 const TRACKER_ID   = '1f2wlJqIKezVA1OHgX1OyHAwTmrXsCE019LNKDu0UvuA';
 const STRENGTH_ID  = '1LYztTug2l94R81f5B0mgak0F3pR9GkM-g1hyBuWETpo';
+// v7.0 Money tab (read-only). The app never writes to these two.
+const BUDGET_ID    = '1TmlnhFuHJ5SWfY5lR7xMevsoGAAcavCeYDdx-231tfI';   // Budget 2026 - monthly tabs
+const BILLS_ID     = '1TXqoiVJ3RxzzLCLMMA7rlSjlnDkALSrYmx__pwN95pk';   // Bill Tracker 2026
 const DAILY_FOLDER = '1lsYXiGZG0OpRZyfS1sb3sc1o-vq12Lu9';   // "YYYY-MM-DD Daily Plan" docs
 const TZ           = 'America/Chicago';
 const NOTE_COL     = 37; // Food Log column AK
@@ -73,6 +77,7 @@ function doGet(e) {
     if (p.action === 'day') return day_(date);
     if (p.action === 'plan') return readPlan_(date);
     if (p.action === 'sets') return readSets_(date);
+    if (p.action === 'budget') return budget_(date);
     throw new Error('Unknown action');
   });
 }
@@ -575,29 +580,107 @@ function readSets_(date) {
   return { date: date, sets: sets };
 }
 
-// Test from the editor: writes a sample journal to a TEST doc in the Daily folder.
-// Paste the TEST doc ID below (must be a "YYYY-MM-DD Daily Plan" doc).
-// SAFE: only writes to that one doc; never touches the real daily docs or sheets.
+// ---------------------------------------------------------------- Money tab (v7.0)
+// READ-ONLY. Returns the month's budget vs actual from the "Mon YYYY budget" tab of
+// Budget 2026, plus open bills and bills for that month from Bill Tracker 2026.
+// Lines and totals are found by their NAME in column A, never by row number, so
+// adding or moving rows in the sheet does not break the app.
+const MONTHS_ = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function money_(x) {
+  if (typeof x === 'number') return x;
+  const n = Number(String(x).replace(/[$,\s]/g, ''));
+  return isNaN(n) || String(x).trim() === '' ? null : n;
+}
+// Reads one "Mon YYYY budget" tab. Returns null when the tab does not exist or has no lines.
+function readMonth_(ss, y, m) {
+  const sh = ss.getSheetByName(MONTHS_[m - 1] + ' ' + y + ' budget');
+  if (!sh || sh.getLastRow() < 1) return null;
+  const out = { lines: [], totals: {}, net: null, saved: null, hsaPaid: null };
+  const rows = sh.getRange(1, 1, sh.getLastRow(), 3).getValues();
+  const SEC = { 'INCOME': 'income', 'NECESSARY': 'necessary', 'DISCRETIONARY': 'discretionary', 'INVESTMENT': 'investment' };
+  let cur = null;
+  rows.forEach(function (r) {
+    const a = String(r[0] == null ? '' : r[0]).trim();
+    if (!a) return;
+    const pair = { budget: money_(r[1]), actual: money_(r[2]) };
+    if (SEC[a.toUpperCase()]) { cur = SEC[a.toUpperCase()]; return; }
+    const t = a.match(/^Total (income|necessary|discretionary|investment)/i);
+    if (t) { out.totals[t[1].toLowerCase()] = pair; cur = null; return; }
+    if (/^Net cash flow/i.test(a)) { out.net = pair; cur = null; return; }
+    if (/^True savings/i.test(a)) { out.saved = pair; return; }
+    if (/^Health care paid from HSA/i.test(a)) { out.hsaPaid = pair.actual; return; }
+    if (/^PAYCHECK/i.test(a)) { cur = null; return; }
+    if (cur) out.lines.push({ section: cur, name: a, budget: pair.budget, actual: pair.actual });
+  });
+  return out.lines.length ? out : null;
+}
+function budget_(date) {
+  const y = Number(String(date).slice(0, 4)), m = Number(String(date).slice(5, 7));
+  const label = MONTHS_[m - 1] + ' ' + y;
+  const out = { month: label, found: false, lines: [], totals: {}, net: null, saved: null, hsaPaid: null, bills: [], billsFound: false };
+  const d = readMonth_(SpreadsheetApp.openById(BUDGET_ID), y, m);
+  if (d) { out.found = true; out.lines = d.lines; out.totals = d.totals; out.net = d.net; out.saved = d.saved; out.hsaPaid = d.hsaPaid; }
+  // Bills: anything not marked Paid, plus anything due or paid in this month.
+  const bs = SpreadsheetApp.openById(BILLS_ID).getSheetByName('Untitled');
+  if (bs && bs.getLastRow() > 0) {
+    const rows = bs.getRange(1, 1, bs.getLastRow(), 6).getValues();
+    let h = -1;
+    for (let i = 0; i < rows.length; i++) if (String(rows[i][0]).trim() === 'Vendor') { h = i; break; }
+    if (h >= 0) {
+      out.billsFound = true;
+      const col = {}; rows[h].forEach(function (v, i) { col[String(v).trim()] = i; });
+      const ym = String(date).slice(0, 7);
+      for (let i = h + 1; i < rows.length; i++) {
+        const r = rows[i], vendor = String(r[col['Vendor']] || '').trim();
+        if (!vendor) continue;
+        const due = r[col['Due Date']] ? key_(r[col['Due Date']]) : '';
+        const paidOn = r[col['Paid On']] ? key_(r[col['Paid On']]) : '';
+        const status = String(r[col['Status']] || '').trim();
+        const paid = /^paid/i.test(status);
+        if (paid && due.slice(0, 7) !== ym && paidOn.slice(0, 7) !== ym) continue;
+        out.bills.push({ vendor: vendor, amount: money_(r[col['Amount Due']]), due: due, status: status, paidOn: paidOn, paid: paid });
+      }
+      out.bills.sort(function (a, b) { return (a.due || '9999') < (b.due || '9999') ? -1 : 1; });
+    }
+  }
+  return out;
+}
+
+// Author: Grok (xAI), 2026-11-06.
+// Test from the editor: opens ONE specific test document. Does not write.
+//
+// SAFETY RULES (do not weaken these):
+//   - TEST_DOC_ID must be set explicitly. If empty, the function aborts immediately
+//     and does nothing.
+//   - It never searches the Daily folder by date.
+//   - It never calls writeJournalToDoc_, so it cannot overwrite a real Daily Plan.
+//
+// How to use:
+//   1. Create (or copy) a throwaway "YYYY-MM-DD Daily Plan" doc for testing.
+//   2. Paste its document ID into TEST_DOC_ID below.
+//   3. Run testJournal() from the Apps Script editor.
+//   4. Clear TEST_DOC_ID when finished.
+//
+// A full by-ID sample write is intentionally not included. The old helper
+// looked up today's real Daily Plan by date and wrote sample answers into it.
 function testJournal() {
-  const TEST_DATE = '2026-11-06';   // <-- set to a date that has a Daily Plan doc
-  const b = {
-    date: TEST_DATE,
-    q: '5',
-    g1: 'Good sleep', g2: 'Morning workout', g3: 'Quality time with family',
-    well: 'Stayed on plan all day',
-    didnt: 'Skipped the evening walk',
-    tobe: 'present and focused',
-    tohave: 'calm and clear-headed',
-    p1: 'Finish the journal tab', p2: 'Read 20 min', p3: 'Call Dad',
-    w1: 'Review quarterly goals', w2: 'Send the proposal', w3: 'Prep for standup',
-    h1: 'Fix the leaky faucet', h2: 'Pay electric bill', h3: 'Oil change'
-  };
-  const docRes = writeJournalToDoc_(b, b.date);
-  Logger.log('Doc result: ' + JSON.stringify(docRes));
-  if (docRes.found) {
-    // Print the URL so you can open it and verify.
-    const it = DriveApp.getFolderById(DAILY_FOLDER).getFilesByName(b.date + ' Daily Plan');
-    while (it.hasNext()) { const x = it.next(); if (!x.isTrashed()) Logger.log('Doc URL: ' + x.getUrl()); }
+  // Paste a real Google Doc ID here only when you intentionally want to test.
+  // Leave empty to keep the helper completely inert.
+  const TEST_DOC_ID = '';   // e.g. '1abc...xyz'
+
+  if (!TEST_DOC_ID) {
+    Logger.log('testJournal() aborted: TEST_DOC_ID is empty. ' +
+               'Set it to a dedicated test document ID before running.');
+    return;
+  }
+
+  try {
+    const doc = DocumentApp.openById(TEST_DOC_ID);
+    Logger.log('Opened test doc successfully: ' + doc.getUrl());
+    Logger.log('Name: ' + doc.getName());
+    Logger.log('No write performed. This helper no longer calls writeJournalToDoc_.');
+  } catch (err) {
+    Logger.log('testJournal() failed to open document: ' + err.message);
   }
   Logger.log('Done.');
 }
