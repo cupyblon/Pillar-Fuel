@@ -33,6 +33,12 @@ Until a row exists, its chip shows "not in sheet" and won't log.
 
 "Anyone" means anyone with the URL *and* the token. Without the token every call returns "Bad token".
 
+**Check it:** open the Web app URL in a private browser window. `{"error":"Bad token"}` means it works. A Google sign-in page means access is not set to Anyone. If the app shows "not valid JSON", the URL in Settings is wrong or incomplete.
+
+**Do not run `testJournal`** to get the permission screen; `setToken` is enough.
+
+**Redeploying later:** to keep the same URL and token use **Deploy → Manage deployments → pencil → Version: New version**. **New deployment** makes a new URL; archive the old ones afterwards.
+
 ## Step 3: Put the app on GitHub Pages (5 min, same as Sun Field)
 
 1. Repo: `cupyblon/Pillar-Fuel` (already created and pushed; public is fine:
@@ -47,7 +53,9 @@ Until a row exists, its chip shows "not in sheet" and won't log.
 |---|---|---|
 | Carnivore Nutrition > Food Log | A Date, B Food, C Amount, D Unit, AK Note (`@18:44 app #L…`) | E–AJ (formulas) |
 | Carnivore Nutrition > Daily Body | A Date, B Weight, D Steps, E Water, F Exercise, G Note | C (7-day avg formula), H (Training min formula from Strength) |
-| Pillars Tracker > Daily Log | Check-out columns by header name. Breakfast/Lunch/Dinner/Snacks only if empty | Grateful, To Be/Have/Feel, Top 3, Source Doc |
+| Pillars Tracker > Daily Log | Check-out columns by header name. Breakfast/Lunch/Dinner/Snacks only if empty. Since v6.4 the Journal tab also writes Grateful, To Be/Have/Feel and Top 3 | Source Doc |
+| Strength Training > Workout Log, Sessions | One row per set (rest column = seconds actually rested since v7.1), one row per workout day | Formula columns |
+| Budget 2026, Bill Tracker 2026 | Nothing. The Money tab only reads them | Everything |
 
 Removing an entry clears that row's A–D + AK; it never deletes rows (row 2 holds the formulas).
 

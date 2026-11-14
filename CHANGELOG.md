@@ -27,7 +27,8 @@ Backend deploys and repo housekeeping. The token and URL themselves are **never*
 | Nov 4 | v6.1.4 | Code.gs pasted; ran a function in the editor (made a new token); deployed; app Settings updated | Yes | Yes | `code.gs` updated (b560b5b) |
 | Nov 4 | v6.2 | Code.gs pasted; new deployment "v6.2 Fine Print" (Version 4, 5:22 PM); all 3 older deployments archived. App Settings need the new URL | Not stated | Yes | `code.gs` updated (944cc23) |
 | Nov 6 | v6.4 | **Paste Code.gs + redeploy (new version, same URL).** Re-auth required (Documents scope added). App updates on next open. | No | No | `apps-script/Code.gs` + `apps-script/appsscript.json` updated |
-| Nov 14 | v7.1 | **Pending: Fernando is redoing the whole deploy** (new Code.gs + appsscript.json, new token via `setToken()`, New deployment). App Settings need the new URL and token. Archive the old deployments. | Yes | Yes | `code.gs`, `appsscript.json` and `apps-script/` copies all updated |
+| Nov 14 | v7.1 | Full redo by Fernando: new Code.gs + appsscript.json pasted, new token via `setToken()`, New deployment. Money tab confirmed showing live numbers (screenshot 1:39 PM). Archive the older deployments if not done. | Yes | Yes | `code.gs`, `appsscript.json` and `apps-script/` copies all updated |
+| Nov 14 | v7.1.1 | **Pending:** paste Code.gs, redeploy as New version (same URL). No re-auth, no JSON change. | No | No | `code.gs` + `apps-script/Code.gs` updated |
 
 **Where the files live:**
 - `apps-script/Code.gs` and `apps-script/appsscript.json` are the working copies. The tests run against these.
@@ -56,6 +57,13 @@ Backend deploys and repo housekeeping. The token and URL themselves are **never*
 **Promoted Nov 6, 2026:** v6.4 "Morning Pages" moved from beta to production after Fernando's OK.
 
 **Promoted Nov 14, 2026:** v6.5, v7.0 and v7.1 moved from beta to production together as **v7.1 "Money"**, on Fernando's instruction ("move all to production").
+
+## v7.1.1 (Nov 14, 2026)
+**Backend: Yes.** Paste `apps-script/Code.gs`, then **Deploy → Manage deployments → pencil → Version: New version → Deploy** (same URL, same token). `appsscript.json` did not change.
+
+- **Bills list cleaned up.** The Money tab no longer shows Bill Tracker rows with Status `Placeholder`, or unpaid rows that have neither an amount nor a due date. Before this, template rows showed as "Due no date" and old unmarked rows as "105 days late".
+- **Bill Tracker sheet (data, not code):** five August rows and one duplicate Westlake row marked Paid after matching each to the Fold statement; four blank template rows set to `Placeholder`. Two rows were not matched and are left for Fernando: Farm School $175 (Aug 1) and the Nicor bill from Jul 22.
+- **Docs brought up to date:** README (tabs, current version), HOW-IT-WORKS (new `sets`, `budget` and `saveJournal` actions, the documents permission, the two read-only sheets), SETUP (what the app writes, how to check the URL, redeploy rules), TESTING (Money checks and the two beta test files).
 
 ## v7.1 "Money" (Nov 14, 2026)
 **Backend: Yes.** Paste `apps-script/Code.gs` and `apps-script/appsscript.json`, then deploy. The Money tab says "Backend needs the v7.0 Code.gs" until that is done; every other tab keeps working on the old backend.
