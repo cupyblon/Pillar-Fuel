@@ -54,6 +54,15 @@ Backend deploys and repo housekeeping. The token and URL themselves are **never*
 
 **Promoted Nov 6, 2026:** v6.4 "Morning Pages" moved from beta to production after Fernando's OK.
 
+## v7.1 "Money, month by month" (Nov 14, 2026) — BETA ONLY, not promoted
+**Backend: Yes, but only when promoted** (same as v7.0: paste `apps-script/Code.gs`, redeploy as a New version).
+
+- **Month arrows on the Money tab.** ‹ › step one month at a time, without changing the day you are logging. It stops at the current month.
+- **Month by month card.** One row per month that has a budget tab: income, spent, net, plus a total row. Spent turns red when it is over that month's plan. Tap a row to open that month.
+- **Due date on every bill.** Each bill has a "Due Nov 25" tag, paid ones included. Open bills also say "in 11 days", "today" or "3 days late"; due within 7 days is amber, late is red.
+- **Backend:** the `budget` action now also returns `year`, the totals for every "Mon YYYY budget" tab in that year. Still read-only.
+- **Tests:** `tests/run.js` +2 (M7–M8), `tests/beta-money.js` +5 (N11–N15). All pass.
+
 ## v7.0 "Money" (Nov 14, 2026) — BETA ONLY, not promoted
 **Backend: Yes, but only when promoted.** The beta shows sample numbers and never calls the backend. Real numbers need the new `apps-script/Code.gs` pasted and redeployed (**Deploy → Manage deployments → pencil → Version: New version → Deploy**). No new Google permission is needed.
 

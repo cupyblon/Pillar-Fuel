@@ -150,6 +150,15 @@ textarea.f{min-height:64px;resize:vertical}
 .mrow .b{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:650}
 .mrow .b small{display:block;color:var(--mute);font-size:12px;font-weight:500;margin-top:2px}
 .mrow .b.bad{color:var(--warn)} .mrow .b.good{color:var(--ok)}
+.mnav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.mnav b{font-size:18px} .mnav button{border:0;background:var(--chip);color:var(--ink);border-radius:12px;width:48px;height:40px;font-size:20px;font-weight:700}
+.mnav button:disabled{opacity:.35}
+.mtab{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.mtab th{font-size:11px;color:var(--mute);font-weight:600;text-align:right;padding:4px 4px} .mtab th:first-child,.mtab td:first-child{text-align:left}
+.mtab td{text-align:right;padding:10px 4px;border-top:1px solid var(--line);white-space:nowrap} .mtab tr.on td{font-weight:700} .mtab tr.on td:first-child{color:var(--carb)}
+.mtab tbody tr{cursor:pointer} .mtab tfoot td{font-weight:700;border-top:2px solid var(--line)}
+.due{display:inline-block;font-size:12px;font-weight:650;border-radius:999px;padding:3px 9px;background:var(--chip);margin-top:4px}
+.due.bad{background:var(--warn);color:#fff} .due.soon{background:var(--mid);color:#1c1916}
 .msec{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);font-weight:600;margin:14px 0 2px}
 /* v6.5 big button: full-screen round-done pad, rest countdown, pause */
 .mini.red{background:#d81f26;color:#fff}
@@ -545,6 +554,7 @@ html.dash:not(.desk) main{max-width:640px}
 <section id="v-money" class="hide">
   <div class="card">
     <div class="lbl">Money <span id="mnStatus"></span></div>
+    <div class="mnav"><button id="mnPrev" aria-label="Previous month">‹</button><b id="mnMonth">–</b><button id="mnNext" aria-label="Next month">›</button></div>
     <div class="row">
       <div class="stat"><div class="v" id="mnIn">–</div><div class="k">income</div></div>
       <div class="stat"><div class="v" id="mnOut">–</div><div class="k">spent of <span id="mnPlan">–</span> plan</div></div>
@@ -555,6 +565,7 @@ html.dash:not(.desk) main{max-width:640px}
   </div>
   <div class="card"><div class="lbl">Over budget <span id="mnOverN"></span></div><div id="mnOver"></div></div>
   <div class="card"><div class="lbl">Bills <span id="mnBillN"></span></div><div id="mnBills"></div></div>
+  <div class="card"><div class="lbl">Month by month <span>tap a month to open it</span></div><div id="mnYear"></div></div>
   <div class="card"><div class="lbl">Saved &amp; invested</div><div id="mnSave"></div></div>
   <div class="card"><div class="lbl">Every line <span>actual / budget</span></div><div id="mnLines"></div></div>
   <button class="btn" id="mnRefresh">Refresh from the budget sheet</button>
@@ -747,7 +758,7 @@ function demoDay(date){
 
 /* ======================= STATE ======================= */
 // Bump with every release; matches CHANGELOG.md.
-const APP_VERSION='v7.0-beta', APP_VERSION_NAME='Money (BETA, demo data)';
+const APP_VERSION='v7.1-beta', APP_VERSION_NAME='Money, month by month (BETA, demo data)';
 // BETA: own storage keys (fuelbeta.*), so beta never touches production's settings or offline queue.
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const BK=k=>String(k).replace(/^fuel\./,'fuelbeta.');
@@ -809,7 +820,7 @@ function setSync(t,bad){ setTimeout(()=>{ if(typeof renderGlance==='function'&&s
   el.textContent=t||(queue.length?queue.length+' waiting to save':'Synced'); el.className='sync'+(bad?' bad':''); }
 async function load(){
   $('#demoBanner').classList.toggle('hide',live());
-  loadPlan(); loadMoney();
+  loadPlan(); mnSel=null; loadMoney();
   if(!live()){ state.day=demoDay(state.date); render(); setSync(); return; }
   const cached=LS.get('fuel.day.'+state.date,null); if(cached){state.day=cached; render();}
   setSync('Loading…');
@@ -1349,23 +1360,34 @@ const DEMO_MONEY={found:true,billsFound:true,
   totals:{income:{budget:5000,actual:2500},necessary:{budget:2850,actual:2666.27},discretionary:{budget:230,actual:207.24},investment:{budget:475,actual:325}},
   net:{budget:1445,actual:-698.51},saved:{budget:1100,actual:560},hsaPaid:42.1,
   bills:[{vendor:'Sample Electric',amount:171.4,due:'-05',status:'Paid',paidOn:'-04',paid:true},{vendor:'Sample Phone',amount:120,due:'-25',status:'Invoiced',paidOn:'',paid:false},{vendor:'Sample Water',amount:88.5,due:'-28',status:'Invoiced',paidOn:'',paid:false}]};
-let money=null;
+let money=null, mnSel=null;   // mnSel = month picked on the Money tab ('YYYY-MM'); null = month of the date at the top
+const DEMO_YEAR=[['08',5000,3310,3080,-210,1050],['09',5000,2890,3080,640,1100],['10',5200,3145,3080,95,1100],['11',2500,2873.51,3080,-698.51,560]];
 const usd=(n,dec)=>n==null||isNaN(n)?'–':(n<0?'−':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:dec?2:0,maximumFractionDigits:dec?2:0});
-const mnMonth=()=>state.date.slice(0,7);
-function mnLabel(){ const [y,m]=state.date.split('-').map(Number); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]+' '+y; }
+const mnMonth=()=>mnSel||state.date.slice(0,7);
+function mnStep(n){ const [y,m]=mnMonth().split('-').map(Number), d=new Date(y,m-1+n,1); mnSel=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); loadMoney(); }
+function mnLabel(){ const [y,m]=mnMonth().split('-').map(Number); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]+' '+y; }
 async function loadMoney(force){
   const ym=mnMonth(), k='fuel.money.'+ym;
-  if(!live()){ money={...DEMO_MONEY,month:mnLabel(),bills:DEMO_MONEY.bills.map(b=>({...b,due:ym+b.due,paidOn:b.paidOn?ym+b.paidOn:''}))}; renderMoney(); $('#mnStatus').textContent=mnLabel()+' · sample numbers'; return; }
+  if(!live()){ const yr=ym.slice(0,4), has=DEMO_YEAR.some(r=>r[0]===ym.slice(5));
+    money={...(has?DEMO_MONEY:{found:false,lines:[],totals:{},billsFound:true}),month:mnLabel(),bills:DEMO_MONEY.bills.map(b=>({...b,due:ym+b.due,paidOn:b.paidOn?ym+b.paidOn:''})),
+      year:DEMO_YEAR.map(r=>({ym:yr+'-'+r[0],month:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+r[0]-1]+' '+yr,income:r[1],spent:r[2],plan:r[3],net:r[4],saved:r[5]}))}; renderMoney(); $('#mnStatus').textContent=mnLabel()+' · sample numbers'; return; }
   money=LS.get(k,null); renderMoney();
   if($('#v-money').classList.contains('hide')&&!force) return;            // only fetch when the tab is open
   if(money&&!force&&Date.now()-(money.at||0)<600e3) return;                // fresh enough (10 min)
   $('#mnStatus').textContent='Loading…';
-  try{ const j=await api({action:'budget',date:state.date}); j.at=Date.now(); LS.set(k,j); if(mnMonth()===ym){ money=j; renderMoney(); } }
+  try{ const j=await api({action:'budget',date:ym+'-01'}); j.at=Date.now(); LS.set(k,j); if(mnMonth()===ym){ money=j; renderMoney(); } }
   catch(e){ $('#mnStatus').textContent=/Unknown action/.test(e.message)?'Backend needs the v7.0 Code.gs':'Could not load: '+e.message; }
 }
 function renderMoney(){
   const m=money, T=(m&&m.totals)||{}, g=(k,f)=>T[k]&&T[k][f]!=null?T[k][f]:null;
   $('#mnStatus').textContent=m?(m.month||mnLabel())+(m.at?' · updated '+new Date(m.at).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):''):mnLabel();
+  $('#mnMonth').textContent=mnLabel(); $('#mnNext').disabled=mnMonth()>=todayKey().slice(0,7);
+  // month-by-month totals (whole year), newest first; tap a row to open that month
+  const yr=(m&&m.year)||[]; $('#mnYear').innerHTML=!yr.length?'<div class="note" style="margin:0">'+(m?'No month tabs found for this year.':'')+'</div>'
+    :'<table class="mtab"><thead><tr><th>Month</th><th>Income</th><th>Spent</th><th>Net</th></tr></thead><tbody>'
+     +yr.slice().reverse().map(r=>`<tr data-ym="${r.ym}" class="${r.ym===mnMonth()?'on':''}"><td>${esc(r.month.slice(0,3))}</td><td>${usd(r.income)}</td><td style="color:${r.spent>r.plan?'var(--warn)':'inherit'}">${usd(r.spent)}</td><td style="color:${r.net==null?'inherit':r.net<0?'var(--warn)':'var(--ok)'}">${usd(r.net)}</td></tr>`).join('')
+     +`</tbody><tfoot><tr><td>Total</td><td>${usd(yr.reduce((a,r)=>a+(r.income||0),0))}</td><td>${usd(yr.reduce((a,r)=>a+(r.spent||0),0))}</td><td>${usd(yr.reduce((a,r)=>a+(r.net||0),0))}</td></tr></tfoot></table>`;
+  $$('#mnYear tr[data-ym]').forEach(tr=>tr.onclick=()=>{ mnSel=tr.dataset.ym; loadMoney(); window.scrollTo(0,0); });
   if(!m||!m.found){ ['mnIn','mnOut','mnNet','mnPlan'].forEach(i=>$('#'+i).textContent='–'); $('#mnBar').style.width='0'; $('#mnPace').textContent=m?'No budget tab for '+(m.month||mnLabel())+' in the Budget sheet.':'Open this tab while online to load your numbers.';
     ['mnOver','mnSave','mnLines'].forEach(i=>$('#'+i).innerHTML=''); $('#mnOverN').textContent=''; if(!m){ $('#mnBills').innerHTML=''; $('#mnBillN').textContent=''; return; } }
   else{
@@ -1374,7 +1396,7 @@ function renderMoney(){
     $('#mnNet').textContent=usd(net); $('#mnNet').style.color=net==null?'':net<0?'var(--warn)':'var(--ok)';
     const p=plan?spent/plan:0; $('#mnBar').style.width=Math.min(100,p*100)+'%'; $('#mnBar').style.background=p>1?'var(--warn)':p>0.85?'var(--mid)':'var(--ok)';
     // pace: share of the month gone vs share of the plan spent (current month only)
-    const [y,mo]=state.date.split('-').map(Number), dim=new Date(y,mo,0).getDate(), isNow=todayKey().slice(0,7)===mnMonth(), day=isNow?Number(todayKey().slice(8)):dim;
+    const [y,mo]=mnMonth().split('-').map(Number), dim=new Date(y,mo,0).getDate(), isNow=todayKey().slice(0,7)===mnMonth(), day=isNow?Number(todayKey().slice(8)):dim;
     $('#mnPace').textContent=plan?Math.round(p*100)+'% of the spending plan used'+(isNow?' · day '+day+' of '+dim+' ('+Math.round(100*day/dim)+'% of the month)':'')+' · '+(plan-spent>=0?usd(plan-spent)+' left':usd(spent-plan)+' over'):'';
     const sp=m.lines.filter(l=>l.section==='necessary'||l.section==='discretionary');
     const over=sp.filter(l=>(l.actual||0)>(l.budget||0)+0.005).sort((a,b)=>((b.actual||0)-(b.budget||0))-((a.actual||0)-(a.budget||0)));
@@ -1391,10 +1413,14 @@ function renderMoney(){
   }
   const bills=m.bills||[], open=bills.filter(b=>!b.paid), paid=bills.filter(b=>b.paid), sum=a=>a.reduce((t,b)=>t+(b.amount||0),0), tk=todayKey();
   $('#mnBillN').textContent=m.billsFound===false?'':usd(sum(open),1)+' open · '+usd(sum(paid),1)+' paid';
-  const dshort=k=>k?Number(k.slice(5,7))+'/'+Number(k.slice(8,10)):'no date';
+  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], dshort=k=>k?MON[Number(k.slice(5,7))-1]+' '+Number(k.slice(8,10)):'no date';
+  const days=k=>Math.round((new Date(k+'T12:00:00')-new Date(tk+'T12:00:00'))/864e5);
   $('#mnBills').innerHTML=m.billsFound===false?'<div class="note" style="margin:0">Bill Tracker not found.</div>':!bills.length?'<div class="note" style="margin:0">No open bills and none this month.</div>'
-    :open.concat(paid).map(b=>{ const late=!b.paid&&b.due&&b.due<tk; return `<div class="mrow"><div class="a">${esc(b.vendor)}<small>${b.paid?'paid'+(b.paidOn?' '+dshort(b.paidOn):''):(late?'OVERDUE · was due ':'due ')+dshort(b.due)}${b.status&&!b.paid?' · '+esc(b.status):''}</small></div><div class="b ${b.paid?'good':late?'bad':''}">${usd(b.amount,1)}</div></div>`; }).join('');
+    :open.concat(paid).map(b=>{ const n=b.due?days(b.due):null, late=!b.paid&&n!=null&&n<0, soon=!b.paid&&n!=null&&n>=0&&n<=7;
+      const when=b.paid?'':n==null?'':late?' · '+(-n)+' day'+(n===-1?'':'s')+' late':n===0?' · today':' · in '+n+' day'+(n===1?'':'s');
+      return `<div class="mrow"><div class="a">${esc(b.vendor)}<small>${b.paid?'Paid'+(b.paidOn?' '+dshort(b.paidOn):''):esc(b.status||'Open')}</small><span class="due ${late?'bad':soon?'soon':''}">Due ${dshort(b.due)}${when}</span></div><div class="b ${b.paid?'good':late?'bad':''}">${usd(b.amount,1)}</div></div>`; }).join('');
 }
+$('#mnPrev').onclick=()=>mnStep(-1); $('#mnNext').onclick=()=>mnStep(1);
 $('#mnRefresh').onclick=()=>loadMoney(true);
 
 
