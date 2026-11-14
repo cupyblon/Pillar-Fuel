@@ -54,6 +54,20 @@ Backend deploys and repo housekeeping. The token and URL themselves are **never*
 
 **Promoted Nov 6, 2026:** v6.4 "Morning Pages" moved from beta to production after Fernando's OK.
 
+## v7.0 "Money" (Nov 14, 2026) — BETA ONLY, not promoted
+**Backend: Yes, but only when promoted.** The beta shows sample numbers and never calls the backend. Real numbers need the new `apps-script/Code.gs` pasted and redeployed (**Deploy → Manage deployments → pencil → Version: New version → Deploy**). No new Google permission is needed.
+
+- **New $ Money tab (read-only).** Follows the month of the date at the top.
+  - Income, spending vs plan, net cash flow, and how much of the plan is used vs how much of the month is gone.
+  - **Over budget:** every line over its budget, biggest first. A line with spending and a $0 budget says "no budget set".
+  - **Bills:** open bills first (overdue marked), then bills paid this month, from Bill Tracker 2026.
+  - **Saved & invested:** true savings, Bitcoin bought, investment total, and health care paid from the HSA (info only).
+  - **Every line:** actual / budget with a bar, grouped Income / Necessary / Discretionary / Investment.
+- **Backend (`Code.gs`):** new GET action `budget`. It only reads. It finds lines and totals by their name in column A, so adding rows to a month tab does not break the app. Months without a "Mon YYYY budget" tab (before Jul 2026) show "No budget tab".
+- **Not included:** adding a transaction from the phone; net worth and loan balances (those live in `finances.json` on the PC).
+- **Privacy:** anyone with the app's URL and token could read these numbers, the same as the food and journal data. The beta holds made-up sample numbers only.
+- **Tests:** `tests/run.js` +6 backend checks (M1–M6); new `tests/beta-money.js` (10 checks). All pass.
+
 ## v6.5 "Big Red Button" (Nov 14, 2026) — BETA ONLY, not promoted
 **Backend: No.** Only `beta/` changed. Production (v6.4) is untouched until Fernando says "promote".
 

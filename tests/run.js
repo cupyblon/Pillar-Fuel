@@ -101,6 +101,14 @@ const APP='file://'+path.join(__dirname,'..','index.html');
   // K3) sets for a date with no rows returns empty array
   const sr2=env.get({token:'t',action:'sets',date:'2025-01-01'});
   ok(Array.isArray(sr2.sets)&&sr2.sets.length===0, 'K3) no sets for unknown date: '+sr2.sets.length);
+  // M: Money tab backend (v7.0) - read-only budget + bills
+  { const m=env.get({token:'t',action:'budget',date:'2026-11-14'});
+    ok(m.found&&m.month==='Nov 2026'&&m.lines.length===6, 'M1) budget: Nov 2026 found, lines = '+m.lines.length+' (want 6; totals, headers and paycheck rows left out)');
+    ok(m.totals.necessary.actual===2540&&m.totals.income.budget===6000&&m.net.actual===170&&m.saved.actual===650&&m.hsaPaid===25, 'M2) totals found by name: necessary '+m.totals.necessary?.actual+', net '+m.net?.actual+', saved '+m.saved?.actual+', HSA '+m.hsaPaid);
+    ok(m.lines.find(l=>l.name==='Food').budget===600&&m.lines.find(l=>l.name==='A brand new line').section==='necessary', 'M3) text budget "600.00" read as a number; an added line is picked up');
+    ok(m.bills.map(x=>x.vendor).join()==='Late Co,Power Co,Phone Co', 'M4) bills: open + this month only, by due date: '+m.bills.map(x=>x.vendor).join());
+    const none=env.get({token:'t',action:'budget',date:'2026-03-10'}); ok(none.found===false&&!none.error, 'M5) month with no tab -> found:false, no error');
+    ok(env.get({token:'bad',action:'budget',date:'2026-11-14'}).error==='Bad token', 'M6) budget needs the token'); }
   await b.close();
   console.log(fails?`\n${fails} FAILED`:'\nALL PASSED'); process.exit(fails?1:0);
 })();
