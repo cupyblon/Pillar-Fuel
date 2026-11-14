@@ -108,7 +108,9 @@ const APP='file://'+path.join(__dirname,'..','index.html');
     ok(m.lines.find(l=>l.name==='Food').budget===600&&m.lines.find(l=>l.name==='A brand new line').section==='necessary', 'M3) text budget "600.00" read as a number; an added line is picked up');
     ok(m.bills.map(x=>x.vendor).join()==='Late Co,Power Co,Phone Co', 'M4) bills: open + this month only, by due date: '+m.bills.map(x=>x.vendor).join());
     const none=env.get({token:'t',action:'budget',date:'2026-03-10'}); ok(none.found===false&&!none.error, 'M5) month with no tab -> found:false, no error');
-    ok(env.get({token:'bad',action:'budget',date:'2026-11-14'}).error==='Bad token', 'M6) budget needs the token'); }
+    ok(env.get({token:'bad',action:'budget',date:'2026-11-14'}).error==='Bad token', 'M6) budget needs the token');
+    ok(m.year.map(x=>x.ym).join()==='2026-10,2026-11'&&m.year[0].spent===2200&&m.year[0].plan===1980&&m.year[0].net===3900&&m.year[1].income===3000, 'M7) month-by-month totals: '+m.year.map(x=>x.month+' in '+x.income+' out '+x.spent+' net '+x.net).join(' | '));
+    ok(none.year.length===2, 'M8) a month with no tab still returns the year list ('+none.year.length+' months)'); }
   await b.close();
   console.log(fails?`\n${fails} FAILED`:'\nALL PASSED'); process.exit(fails?1:0);
 })();

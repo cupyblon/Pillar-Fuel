@@ -591,29 +591,44 @@ function money_(x) {
   const n = Number(String(x).replace(/[$,\s]/g, ''));
   return isNaN(n) || String(x).trim() === '' ? null : n;
 }
+// Reads one "Mon YYYY budget" tab. Returns null when the tab does not exist or has no lines.
+function readMonth_(ss, y, m) {
+  const sh = ss.getSheetByName(MONTHS_[m - 1] + ' ' + y + ' budget');
+  if (!sh || sh.getLastRow() < 1) return null;
+  const out = { lines: [], totals: {}, net: null, saved: null, hsaPaid: null };
+  const rows = sh.getRange(1, 1, sh.getLastRow(), 3).getValues();
+  const SEC = { 'INCOME': 'income', 'NECESSARY': 'necessary', 'DISCRETIONARY': 'discretionary', 'INVESTMENT': 'investment' };
+  let cur = null;
+  rows.forEach(function (r) {
+    const a = String(r[0] == null ? '' : r[0]).trim();
+    if (!a) return;
+    const pair = { budget: money_(r[1]), actual: money_(r[2]) };
+    if (SEC[a.toUpperCase()]) { cur = SEC[a.toUpperCase()]; return; }
+    const t = a.match(/^Total (income|necessary|discretionary|investment)/i);
+    if (t) { out.totals[t[1].toLowerCase()] = pair; cur = null; return; }
+    if (/^Net cash flow/i.test(a)) { out.net = pair; cur = null; return; }
+    if (/^True savings/i.test(a)) { out.saved = pair; return; }
+    if (/^Health care paid from HSA/i.test(a)) { out.hsaPaid = pair.actual; return; }
+    if (/^PAYCHECK/i.test(a)) { cur = null; return; }
+    if (cur) out.lines.push({ section: cur, name: a, budget: pair.budget, actual: pair.actual });
+  });
+  return out.lines.length ? out : null;
+}
 function budget_(date) {
   const y = Number(String(date).slice(0, 4)), m = Number(String(date).slice(5, 7));
   const label = MONTHS_[m - 1] + ' ' + y;
-  const out = { month: label, found: false, lines: [], totals: {}, net: null, saved: null, hsaPaid: null, bills: [], billsFound: false };
-  const sh = SpreadsheetApp.openById(BUDGET_ID).getSheetByName(label + ' budget');
-  if (sh && sh.getLastRow() > 0) {
-    const rows = sh.getRange(1, 1, sh.getLastRow(), 3).getValues();
-    const SEC = { 'INCOME': 'income', 'NECESSARY': 'necessary', 'DISCRETIONARY': 'discretionary', 'INVESTMENT': 'investment' };
-    let cur = null;
-    rows.forEach(function (r) {
-      const a = String(r[0] == null ? '' : r[0]).trim();
-      if (!a) return;
-      const pair = { budget: money_(r[1]), actual: money_(r[2]) };
-      if (SEC[a.toUpperCase()]) { cur = SEC[a.toUpperCase()]; return; }
-      const t = a.match(/^Total (income|necessary|discretionary|investment)/i);
-      if (t) { out.totals[t[1].toLowerCase()] = pair; cur = null; return; }
-      if (/^Net cash flow/i.test(a)) { out.net = pair; cur = null; return; }
-      if (/^True savings/i.test(a)) { out.saved = pair; return; }
-      if (/^Health care paid from HSA/i.test(a)) { out.hsaPaid = pair.actual; return; }
-      if (/^PAYCHECK/i.test(a)) { cur = null; return; }
-      if (cur) out.lines.push({ section: cur, name: a, budget: pair.budget, actual: pair.actual });
-    });
-    out.found = out.lines.length > 0;
+  const out = { month: label, found: false, lines: [], totals: {}, net: null, saved: null, hsaPaid: null, bills: [], billsFound: false, year: [] };
+  const ss = SpreadsheetApp.openById(BUDGET_ID);
+  // Month-by-month totals for the whole year (v7.1): one row per month that has a budget tab.
+  for (let k = 1; k <= 12; k++) {
+    const d = readMonth_(ss, y, k);
+    if (!d) continue;
+    const T = d.totals, v = function (sec, f) { return T[sec] && T[sec][f] != null ? T[sec][f] : 0; };
+    out.year.push({ ym: y + '-' + (k < 10 ? '0' : '') + k, month: MONTHS_[k - 1] + ' ' + y,
+      income: v('income', 'actual'), spent: v('necessary', 'actual') + v('discretionary', 'actual'),
+      plan: v('necessary', 'budget') + v('discretionary', 'budget'), invested: v('investment', 'actual'),
+      net: d.net ? d.net.actual : null, saved: d.saved ? d.saved.actual : null });
+    if (k === m) { out.found = true; out.lines = d.lines; out.totals = d.totals; out.net = d.net; out.saved = d.saved; out.hsaPaid = d.hsaPaid; }
   }
   // Bills: anything not marked Paid, plus anything due or paid in this month.
   const bs = SpreadsheetApp.openById(BILLS_ID).getSheetByName('Untitled');

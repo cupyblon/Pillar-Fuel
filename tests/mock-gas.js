@@ -34,6 +34,8 @@ function makeEnv(){
     ['NECESSARY'],['Mortgage',1800,1800],['A brand new line',0,40],['Food','600.00',700],['Total necessary',2400,2540],[],['DISCRETIONARY'],['Dining out',180,90],['Total discretionary',180,90],[],
     ['INVESTMENT'],['Bitcoin DCA (Fold)',450,200],['Total investment',450,200],[],['Net cash flow (income - all spending)',2970,170],[],
     ['PAYCHECK BREAKDOWN','Monthly avg','This month'],['Gross pay',9000,4500],[],['True savings (Roth + HSA + Bitcoin DCA)',1400,650],[],['Health care paid from HSA (info only - not in totals)','',25]]) };
+  bud['Oct 2026 budget']=new Sheet('Oct 2026 budget',[['INCOME'],['Salary',6000,6100],['Total income',6000,6100],['NECESSARY'],['Mortgage',1800,1900],['Total necessary',1800,1900],['DISCRETIONARY'],['Dining out',180,300],['Total discretionary',180,300],['Net cash flow (income - all spending)',4020,3900]]);
+  bud['Jun 2026 actuals']=new Sheet('Jun 2026 actuals',[['INCOME'],['Salary',1,1],['Total income',1,1]]);   // old layout/name: must be ignored
   const bil={ 'Untitled':new Sheet('Untitled',[['Bill Tracker'],[],[],['Vendor','Amount Due','Due Date','Status','Paid On','Notes / Source'],
     ['Old Paid Co',50,d('2026-09-10'),'Paid',d('2026-09-09'),''],['Power Co',120,d('2026-11-05'),'Paid',d('2026-11-04'),''],['Phone Co',228.56,d('2026-11-25'),'Invoiced','',''],['Late Co',75,d('2026-10-20'),'Overdue','','']]) };
   const books={'1TmlnhFuHJ5SWfY5lR7xMevsoGAAcavCeYDdx-231tfI':bud,'1TXqoiVJ3RxzzLCLMMA7rlSjlnDkALSrYmx__pwN95pk':bil,'1mAkG128NSk-IzEJg-EZTNbNBz7YmmhnlBjJJAYMoyhA':nut,'1f2wlJqIKezVA1OHgX1OyHAwTmrXsCE019LNKDu0UvuA':trk,'1LYztTug2l94R81f5B0mgak0F3pR9GkM-g1hyBuWETpo':str};
