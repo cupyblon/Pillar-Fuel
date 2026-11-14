@@ -142,6 +142,25 @@ textarea.f{min-height:64px;resize:vertical}
 .restbar.go{animation:rflash .45s 6 alternate}
 @keyframes rflash{to{background:var(--ok);color:#000}}
 .restbar button{background:rgba(255,255,255,.2);border:0;color:#fff;border-radius:10px;padding:6px 10px;font-weight:700}
+.restbar.paused{background:var(--mute)}
+/* v6.5 big button: full-screen round-done pad, rest countdown, pause */
+.mini.red{background:#d81f26;color:#fff}
+.pad{position:fixed;inset:0;z-index:30;background:var(--bg);display:flex;flex-direction:column;gap:10px;
+  padding:calc(10px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom))}
+.padtop{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:700;font-size:15px}
+.padtop span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.padtop button{border:0;background:var(--chip);color:var(--ink);border-radius:12px;padding:10px 16px;font-size:16px;font-weight:700;flex:none}
+.padbig{flex:1;min-height:0;border:0;border-radius:28px;background:#d81f26;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.padbig b{font-size:clamp(64px,24vw,190px);line-height:1;font-weight:800;font-variant-numeric:tabular-nums}
+.padbig small{font-size:16px;font-weight:600;opacity:.92;padding:0 16px;text-align:center}
+.pad[data-mode="work"] .padbig:active{background:#a91318}
+.pad[data-mode="rest"] .padbig{background:var(--protein)}
+.pad[data-mode="paused"] .padbig{background:var(--chip);color:var(--ink)}
+.pad[data-mode="paused"] .padbig b{font-size:clamp(44px,16vw,150px)}
+.pad.go .padbig{animation:rflash .45s 6 alternate}
+.padrow{display:flex;gap:10px}
+.padrow button{flex:1;border:0;border-radius:16px;padding:18px 6px;font-size:18px;font-weight:700;background:var(--chip);color:var(--ink);touch-action:manipulation}
 .tpl{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .tpl button{border:0;background:var(--chip);border-radius:14px;padding:10px;text-align:left;font-size:13px;font-weight:650;line-height:1.25}
 .tpl button small{display:block;color:var(--mute);font-weight:500;font-size:11px;margin-top:2px}
@@ -405,17 +424,24 @@ html.dash:not(.desk) main{max-width:640px}
 
 <!-- ================= TRAIN ================= -->
 <section id="v-train" class="hide">
-  <div class="restbar hide" id="restBar"><span id="restTxt">Rest 1:30</span><span><button id="restAdd">+30s</button> <button id="restStop">Done</button></span></div>
+  <div class="restbar hide" id="restBar"><span id="restTxt">Rest 1:30</span><span><button id="restAdd">+30s</button> <button id="restPause">Pause</button> <button id="restStop">Done</button></span></div>
+  <div class="pad hide" id="pad" data-mode="work">
+    <div class="padtop"><span id="padTitle"></span><button id="padX" aria-label="Close big button">✕ Close</button></div>
+    <button class="padbig" id="padDone"><b id="padBig">DONE</b><small id="padSub"></small></button>
+    <div class="padrow"><button id="padAdd">+30s</button><button id="padPause">Pause</button><button id="padSkip">Skip rest</button></div>
+  </div>
   <div class="card">
     <div class="lbl">Workout <span id="trStatus">not started</span></div>
     <div class="row">
       <div class="stat"><div class="v" id="trTime">0:00</div><div class="k">session time</div></div>
       <div class="stat"><div class="v" id="trSets">0</div><div class="k">sets · <span id="trVol">0</span> lb volume</div></div>
+      <div class="stat"><div class="v" id="trRest">0:00</div><div class="k">rest · <span id="trAdds">0</span> × +30s</div></div>
     </div>
     <div class="brow">
       <button class="mini" data-add="1">+ Exercise</button>
       <button class="mini" data-add="2">+ Superset</button>
       <button class="mini" data-add="3">+ Tri-set</button>
+      <button class="mini hide" id="trPause">Pause workout</button>
     </div>
   </div>
   <div id="blocks"></div>
@@ -692,7 +718,7 @@ function demoDay(date){
 
 /* ======================= STATE ======================= */
 // Bump with every release; matches CHANGELOG.md.
-const APP_VERSION='v6.4-beta', APP_VERSION_NAME='Morning Pages (BETA, demo data)';
+const APP_VERSION='v6.5-beta', APP_VERSION_NAME='Big Red Button (BETA, demo data)';
 // BETA: own storage keys (fuelbeta.*), so beta never touches production's settings or offline queue.
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const BK=k=>String(k).replace(/^fuel\./,'fuelbeta.');
@@ -1074,7 +1100,7 @@ const TPLS=[
  {t:'Finisher',d:'Farmer carry + bag flow',b:[["Farmer's carry",'Bag get-up, carry & slam']]},
 ];
 const lib=n=>LIB.find(x=>x.n===n)||{n,g:'Other',eq:['DB'],m:'rw'};
-let tr=null, trTick=null, rest={end:0,t:null};
+let tr=null, trTick=null, rest={on:false,go:false,end:0,left:0,from:0,pausedMs:0,adds:0,b:null,ri:-1,t:null,goT:null}, pad={open:false,b:null,tap:0,wl:null};
 function trKey(){ return 'fuel.train.'+state.date; }
 function trLoad(){ tr=LS.get(trKey(),null)||{date:state.date,start:null,blocks:[],saved:false}; }
 function trSaveLS(){ LS.set(trKey(),tr); }
@@ -1146,42 +1172,98 @@ function renderTrain(){
         f.forEach(ff=>{ if(!ff){h+='<span></span>';return;} h+=`<input type="number" inputmode="decimal" placeholder="${ff[1]}" value="${v[ff[0]]??''}" data-in="${bi},${ri},${ei},${ff[0]}" aria-label="${ff[1]}">`; });
         h+='</div>'; });
       h+='</div>'; });
-    h+=`<div class="brow"><button class="mini pri" data-round="${bi}">✓ Round done → rest</button><button class="mini" data-copy="${bi}">+ Round</button></div>`;
+    h+=`<div class="brow"><button class="mini red" data-pad="${bi}">● Big button</button><button class="mini pri" data-round="${bi}">✓ Round done → rest</button><button class="mini" data-copy="${bi}">+ Round</button></div>`;
     el.innerHTML=h; box.appendChild(el); });
   // events
   box.querySelectorAll('[data-in]').forEach(i=>i.oninput=()=>{ const [bi,ri,ei,k]=i.dataset.in.split(','); const b=tr.blocks[bi];
     b.rounds[ri][ei]={...b.rounds[ri][ei],[k]:i.value===''?'':Number(i.value)}; trSaveLS(); trStats(); });
   box.querySelectorAll('[data-eq]').forEach(btn=>btn.onclick=()=>{ const [bi,ei,q]=btn.dataset.eq.split(','); tr.blocks[bi].ex[ei].eq=q; trSaveLS(); renderTrain(); });
-  box.querySelectorAll('[data-del]').forEach(btn=>btn.onclick=()=>{ if(confirm('Remove this block?')){ tr.blocks.splice(+btn.dataset.del,1); trSaveLS(); renderTrain(); } });
-  box.querySelectorAll('[data-delr]').forEach(btn=>btn.onclick=()=>{ const b=tr.blocks[+btn.dataset.delr]; b.rounds.pop(); b.done=Math.min(b.done,b.rounds.length); trSaveLS(); renderTrain(); });
+  box.querySelectorAll('[data-del]').forEach(btn=>btn.onclick=()=>{ if(confirm('Remove this block?')){ const b=tr.blocks[+btn.dataset.del]; if(rest.b===b) restCancel(); tr.blocks.splice(+btn.dataset.del,1); trSaveLS(); renderTrain(); } });
+  box.querySelectorAll('[data-delr]').forEach(btn=>btn.onclick=()=>{ const b=tr.blocks[+btn.dataset.delr]; b.rounds.pop(); b.done=Math.min(b.done,b.rounds.length);
+    if(b.rest) b.rest.length=Math.min(b.rest.length,b.rounds.length); if(b.adds) b.adds.length=Math.min(b.adds.length,b.rounds.length); trSaveLS(); renderTrain(); });
+  box.querySelectorAll('[data-pad]').forEach(btn=>btn.onclick=()=>padOpen(tr.blocks[+btn.dataset.pad]));
   box.querySelectorAll('[data-copy]').forEach(btn=>btn.onclick=()=>{ const b=tr.blocks[+btn.dataset.copy]; b.rounds.push(b.rounds[b.rounds.length-1].map(v=>({...v}))); trSaveLS(); renderTrain(); });
-  box.querySelectorAll('[data-round]').forEach(btn=>btn.onclick=()=>{ const b=tr.blocks[+btn.dataset.round];
-    b.done=Math.max(b.done,b.rounds.length); b.rounds.push(b.rounds[b.rounds.length-1].map(v=>({...v}))); trSaveLS(); renderTrain(); startRest(b.ex.length>1?90:75); });
+  box.querySelectorAll('[data-round]').forEach(btn=>btn.onclick=()=>roundDone(tr.blocks[+btn.dataset.round]));
   $('#tpls').innerHTML=TPLS.map((t,i)=>`<button data-tpl="${i}">${t.t}<small>${t.d}</small></button>`).join('');
   $$('#tpls button').forEach(b=>b.onclick=()=>TPLS[+b.dataset.tpl].b.forEach(names=>addBlock(names)));
-  $('#trStatus').textContent=tr.saved?'saved ✓':tr.start?'in progress':'not started';
-  trStats(); renderWkSets();
+  $('#trStatus').textContent=tr.saved?'saved ✓':tr.pauseAt?'paused':tr.start?'in progress':'not started';
+  trStats(); renderWkSets(); restPaint();
 }
+// One place for "round done" so the small button and the big red button do exactly the same thing.
+function roundDone(b){ if(!b) return; restFinish(false); const ri=b.rounds.length-1;
+  b.done=Math.max(b.done,b.rounds.length); b.rounds.push(b.rounds[b.rounds.length-1].map(v=>({...v}))); trSaveLS(); renderTrain(); startRest(b.ex.length>1?90:75,b,ri); }
 // Only rounds marked done count; if none marked, all rounds count.
 function trSets(t){ const out=[]; (t||tr).blocks.forEach((b,bi)=>{ const n=b.done||b.rounds.length; const label=b.ex.length>1?(b.ex.length===2?'Superset ':'Tri-set ')+String.fromCharCode(65+bi)+': '+b.ex.map(e=>e.n).join(' + '):'';
   for(let ri=0;ri<n;ri++) b.ex.forEach((e,ei)=>{ const v=b.rounds[ri][ei]||{}, x=lib(e.n);
     const has = x.m==='carry'? (v.w||v.dist) : (v.reps||v.time);
     if(!has) return;
-    const notes=[label, x.eq.length>1?EQN[e.eq]||e.eq:''].filter(Boolean).join(' · ');
-    out.push({exercise:e.n,group:x.g,set:ri+1,reps:x.m==='carry'?'':v.reps,weight:x.m==='bag'?Number(e.eq)||'':v.w,time:v.time||'',distance:v.dist||'',rest:b.ex.length>1?90:75,effort:'',notes}); }); }); return out; }
-function trStats(){ const s=trSets(); $('#trSets').textContent=s.length; $('#trVol').textContent=Math.round(s.reduce((a,x)=>a+(Number(x.reps)||0)*(Number(x.weight)||0),0)).toLocaleString(); }
+    const adds=(b.adds&&b.adds[ri])||0, timed=b.rest&&b.rest[ri]!=null;
+    const notes=[label, x.eq.length>1?EQN[e.eq]||e.eq:'', adds?'rest +30s × '+adds:''].filter(Boolean).join(' · ');
+    out.push({exercise:e.n,group:x.g,set:ri+1,reps:x.m==='carry'?'':v.reps,weight:x.m==='bag'?Number(e.eq)||'':v.w,time:v.time||'',distance:v.dist||'',rest:timed?b.rest[ri]:(b.ex.length>1?90:75),effort:'',notes}); }); }); return out; }
+// Rest actually taken this session (seconds) and how many times +30s was tapped. Counted once per round, not once per exercise.
+function trRest(t){ let sec=0, adds=0; (t||tr).blocks.forEach(b=>{ (b.rest||[]).forEach(v=>sec+=Number(v)||0); (b.adds||[]).forEach(v=>adds+=Number(v)||0); });
+  if(rest.on&&(!t||t===tr)){ sec+=restSpent(); adds+=rest.adds; } return {sec,adds}; }
+const mmss=s=>{ s=Math.max(0,Math.round(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); };
+function trStats(){ const s=trSets(); $('#trSets').textContent=s.length; $('#trVol').textContent=Math.round(s.reduce((a,x)=>a+(Number(x.reps)||0)*(Number(x.weight)||0),0)).toLocaleString();
+  const r=trRest(); $('#trRest').textContent=mmss(r.sec); $('#trAdds').textContent=r.adds; }
+// Session clock leaves out paused time.
+function trPausedMs(){ return tr?(tr.paused||0)+(tr.pauseAt?Date.now()-tr.pauseAt:0):0; }
+function trElapsed(){ return tr&&tr.start?Math.max(0,(tr.end||Date.now())-tr.start-trPausedMs()):0; }
 function startTick(){ clearInterval(trTick); trTick=setInterval(()=>{ if(!tr||!tr.start){ $('#trTime').textContent='0:00'; return; }
-  const end=tr.end||Date.now(); const m=Math.floor((end-tr.start)/60000); $('#trTime').textContent=Math.floor(m/60)+':'+String(m%60).padStart(2,'0'); },1000); }
+  const m=Math.floor(trElapsed()/60000); $('#trTime').textContent=Math.floor(m/60)+':'+String(m%60).padStart(2,'0'); },1000); }
 // Beep needs a tap first on iPhone, so the "Round done" tap unlocks sound. Ring/silent switch still applies.
 let actx=null;
 function unlockAudio(){ try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); if(actx.state==='suspended') actx.resume(); }catch(e){} }
 function beep(){ if(!actx) return; try{ const t0=actx.currentTime; [0,.22,.44].forEach((t,i)=>{ const o=actx.createOscillator(), g=actx.createGain();
     o.frequency.value=i===2?1320:880; g.gain.setValueAtTime(.0001,t0+t); g.gain.exponentialRampToValueAtTime(.35,t0+t+.02); g.gain.exponentialRampToValueAtTime(.0001,t0+t+.18);
     o.connect(g); g.connect(actx.destination); o.start(t0+t); o.stop(t0+t+.2); }); }catch(e){} }
-function startRest(sec){ unlockAudio(); rest.end=Date.now()+sec*1000; const bar=$('#restBar'); bar.classList.remove('hide','go'); clearInterval(rest.t);
-  rest.t=setInterval(()=>{ const left=Math.round((rest.end-Date.now())/1000); if(left<=0){ $('#restTxt').textContent='Go! Next round'; bar.classList.add('go'); beep(); if(navigator.vibrate) navigator.vibrate(300); clearInterval(rest.t); setTimeout(()=>bar.classList.add('hide'),4000); return; }
-    $('#restTxt').textContent='Rest '+Math.floor(left/60)+':'+String(left%60).padStart(2,'0'); },250); }
-$('#restAdd').onclick=()=>{ rest.end+=30000; }; $('#restStop').onclick=()=>{ clearInterval(rest.t); $('#restBar').classList.add('hide'); };
+/* ---- Rest timer (v6.5): counts down, can be paused, and records the seconds actually rested per round ---- */
+const isPaused=()=>!!(tr&&tr.pauseAt);
+function restLeftMs(){ return rest.on?(isPaused()?rest.left:rest.end-Date.now()):0; }
+// Seconds of rest used so far in the running rest (paused time left out).
+function restSpent(){ if(!rest.on) return 0; const now=isPaused()?tr.pauseAt:Math.min(Date.now(),rest.end); return Math.max(0,Math.round((now-rest.from-rest.pausedMs)/1000)); }
+function startRest(sec,b,ri){ unlockAudio(); restFinish(false); clearTimeout(rest.goT); clearInterval(rest.t);
+  rest={...rest,on:true,go:false,end:Date.now()+sec*1000,left:sec*1000,from:Date.now(),pausedMs:0,adds:0,b:b||null,ri:ri==null?-1:ri};
+  rest.t=setInterval(restTick,250); restPaint(); }
+function restTick(){ if(!rest.on){ clearInterval(rest.t); return; } if(isPaused()) return; if(rest.end-Date.now()<=0){ restFinish(true); return; } restPaint(); trStats(); }
+// Ends the running rest and writes what was actually rested onto the round. timeUp = the countdown reached zero.
+function restFinish(timeUp){ if(!rest.on) return; const secs=restSpent(); rest.on=false; clearInterval(rest.t);
+  const b=rest.b; if(b&&tr&&tr.blocks.includes(b)&&rest.ri>=0){ b.rest=b.rest||[]; b.adds=b.adds||[]; b.rest[rest.ri]=secs; b.adds[rest.ri]=rest.adds; trSaveLS(); }
+  if(timeUp){ rest.go=true; beep(); if(navigator.vibrate) navigator.vibrate(300); clearTimeout(rest.goT); rest.goT=setTimeout(()=>{ rest.go=false; restPaint(); },4000); }
+  restPaint(); trStats(); }
+function restCancel(){ rest.on=false; rest.go=false; clearInterval(rest.t); clearTimeout(rest.goT); restPaint(); }
+function restAdd30(){ if(!rest.on) return; if(isPaused()) rest.left+=30000; else rest.end+=30000; rest.adds++; restPaint(); trStats(); }
+// Pause freezes both the rest countdown and the session clock. Works with or without a rest running.
+function togglePause(){ if(!tr||!tr.start||tr.end) return; unlockAudio();
+  if(tr.pauseAt){ const d=Date.now()-tr.pauseAt; tr.paused=(tr.paused||0)+d; tr.pauseAt=null; if(rest.on){ rest.end=Date.now()+rest.left; rest.pausedMs+=d; } }
+  else{ tr.pauseAt=Date.now(); if(rest.on) rest.left=Math.max(0,rest.end-Date.now()); }
+  trSaveLS(); $('#trStatus').textContent=tr.saved?'saved ✓':tr.pauseAt?'paused':'in progress'; restPaint(); }
+function restPaint(){ const bar=$('#restBar'), paused=isPaused(), on=rest.on, active=!!(tr&&tr.start&&!tr.end);
+  bar.classList.toggle('hide',!(on||paused||rest.go)); bar.classList.toggle('go',rest.go&&!on&&!paused); bar.classList.toggle('paused',paused);
+  $('#restTxt').textContent=paused?(on?'Paused · rest '+mmss(restLeftMs()/1000)+' left':'Workout paused'):on?'Rest '+mmss(restLeftMs()/1000):'Go! Next round';
+  $('#restAdd').classList.toggle('hide',!on); $('#restStop').classList.toggle('hide',!on||paused); $('#restPause').classList.toggle('hide',!active); $('#restPause').textContent=paused?'Resume':'Pause';
+  const tp=$('#trPause'); tp.classList.toggle('hide',!active); tp.textContent=paused?'Resume workout':'Pause workout';
+  padPaint(); }
+$('#restAdd').onclick=restAdd30; $('#restStop').onclick=()=>restFinish(false); $('#restPause').onclick=togglePause; $('#trPause').onclick=togglePause;
+/* ---- Big red button (v6.5): one near-full-screen target for "round done", for any exercise ---- */
+function padOpen(b){ if(!b) return; unlockAudio(); pad.open=true; pad.b=b; pad.tap=Date.now(); padWake(true); padPaint(); }
+function padClose(){ pad.open=false; pad.b=null; padWake(false); padPaint(); }
+// Keeps the phone screen awake while the big button is up (where the browser supports it).
+function padWake(on){ try{ if(on){ if(navigator.wakeLock&&!pad.wl) navigator.wakeLock.request('screen').then(w=>{ pad.wl=w; w.addEventListener('release',()=>{ pad.wl=null; }); if(!pad.open) w.release(); }).catch(()=>{}); }
+  else if(pad.wl){ pad.wl.release(); pad.wl=null; } }catch(e){} }
+document.addEventListener('visibilitychange',()=>{ if(pad.open&&document.visibilityState==='visible') padWake(true); });
+function padPaint(){ const el=$('#pad'); if(pad.open&&(!tr||!tr.blocks.includes(pad.b))){ pad.open=false; pad.b=null; padWake(false); }
+  el.classList.toggle('hide',!pad.open); if(!pad.open) return;
+  const b=pad.b, paused=isPaused(), on=rest.on, mode=paused?'paused':on?'rest':'work'; el.dataset.mode=mode; el.classList.toggle('go',rest.go&&mode==='work');
+  $('#padTitle').textContent=b.ex.map(e=>e.n).join(' + ');
+  $('#padBig').textContent=mode==='work'?'DONE':mode==='rest'?mmss(restLeftMs()/1000):'PAUSED';
+  $('#padSub').textContent=mode==='work'?'Round '+b.rounds.length+' · tap anywhere here when the round is done'
+    :mode==='rest'?'Rest'+(rest.ri>=0?' after round '+(rest.ri+1):'')+(rest.adds?' · +30s × '+rest.adds:'')
+    :(on?'Rest '+mmss(restLeftMs()/1000)+' left · ':'')+'clock stopped · tap Resume';
+  $('#padAdd').classList.toggle('hide',!on); $('#padSkip').classList.toggle('hide',!on||paused); $('#padPause').textContent=paused?'Resume':'Pause'; }
+// The 600 ms guard stops a tired double-tap from logging two rounds.
+$('#padDone').onclick=()=>{ if(!pad.open||$('#pad').dataset.mode!=='work') return; const now=Date.now(); if(now-pad.tap<600) return; pad.tap=now; roundDone(pad.b); };
+$('#padAdd').onclick=restAdd30; $('#padSkip').onclick=()=>{ pad.tap=Date.now(); restFinish(false); }; $('#padPause').onclick=()=>{ pad.tap=Date.now(); togglePause(); }; $('#padX').onclick=padClose;
 // picker
 let pick={need:1,sel:[]};
 function openPick(n){ pick={need:n,sel:[]}; $('#pickTitle').textContent=n===1?'Pick an exercise':n===2?'Pick 2 for the superset':'Pick 3 for the tri-set';
@@ -1199,11 +1281,13 @@ $('#pickOk').onclick=()=>{ if(!pick.sel.length) return; addBlock(pick.sel); clos
 function sessionType(sets){ const gs=new Set(sets.map(s=>s.group));
   const cond=[...gs].every(g=>g==='Conditioning'||g==='Carries'); if(cond) return 'HIIT';
   if(gs.has('Conditioning')||gs.has('Carries')) return 'Mixed'; return 'Weights'; }
-$('#trSave').onclick=()=>{ const sets=trSets(); if(!sets.length){ toast('Nothing to save yet'); return; }
-  const mins=tr.start?Math.max(1,Math.round(((tr.end||Date.now())-tr.start)/60000)):'';
-  const st=sessionType(sets);
-  if(!confirm(`${tr.saved?'Update the saved workout:':'Save'} ${sets.length} sets (${st}, ${mins} min)?`)) return;
-  tr.sid=tr.sid||('W'+Date.now().toString(36)); tr.end=tr.end||Date.now(); tr.saved=true; trSaveLS();
+$('#trSave').onclick=()=>{ let sets=trSets(); if(!sets.length){ toast('Nothing to save yet'); return; }
+  const mins=tr.start?Math.max(1,Math.round(trElapsed()/60000)):'';
+  const st=sessionType(sets), rr=trRest();
+  if(!confirm(`${tr.saved?'Update the saved workout:':'Save'} ${sets.length} sets (${st}, ${mins} min${rr.sec?', rest '+mmss(rr.sec)+(rr.adds?', +30s × '+rr.adds:''):''})?`)) return;
+  restFinish(false); sets=trSets();   // a rest still running is closed out and counted as rested so far
+  if(tr.pauseAt){ tr.paused=(tr.paused||0)+(Date.now()-tr.pauseAt); tr.pauseAt=null; }
+  tr.sid=tr.sid||('W'+Date.now().toString(36)); tr.end=tr.end||Date.now(); tr.saved=true; trSaveLS(); padClose();
   tr.blocks.forEach(b=>b.ex.forEach((e,ei)=>{ const r=b.rounds[Math.max(0,(b.done||b.rounds.length)-1)][ei]; setLast(e.n,{...r,eq:e.eq}); }));
   const hist=LS.get('fuel.trainHist',[]).filter(h=>h.date!==state.date); hist.push({date:state.date,sets:sets.map(s=>({g:s.group}))}); LS.set('fuel.trainHist',hist.slice(-60));
   if(live()){ queue=queue.filter(q=>!(q.action==='addSets'&&q.session===tr.sid&&!inflight.has(q)));   // newer save replaces a waiting one
