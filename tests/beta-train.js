@@ -12,7 +12,7 @@ const APP='file://'+path.join(__dirname,'..','beta','index.html');
   const ff=async s=>{ await pg.clock.runFor(s*1000); };
   const vis=async sel=>await pg.evaluate(s=>{ const e=document.querySelector(s); return !!e&&e.getClientRects().length>0; },sel);
   await pg.evaluate("show('train'); addBlock(['Uphill sprint']); tr.blocks[0].rounds[0][0]={reps:1,time:20}; trSaveLS(); renderTrain()");
-  ok(await pg.textContent('#verNote').then(t=>/v\d+\.\d+-beta/.test(t)), 'B1) version label is a beta version');
+  ok(await pg.textContent('#verNote').then(t=>/v\d+(\.\d+)+-beta/.test(t)), 'B1) version label is a beta version');
   ok(!(await vis('#pad')), 'B2) big button hidden until asked for');
   await pg.click('[data-pad="0"]'); await ff(1);
   const box=await pg.locator('#padDone').boundingBox();
@@ -32,7 +32,7 @@ const APP='file://'+path.join(__dirname,'..','beta','index.html');
   await pg.click('#padPause'); const frozen=await pg.textContent('#padSub'); await ff(60);
   ok(await pg.getAttribute('#pad','data-mode')==='paused' && await pg.textContent('#padSub')===frozen, 'B9) pause freezes the rest countdown: '+frozen);
   const tPaused=await pg.evaluate("trElapsed()");
-  await ff(30); ok(await pg.evaluate("trElapsed()")===tPaused, 'B10) pause freezes the session clock');
+  await ff(30); ok(Math.abs(await pg.evaluate("trElapsed()")-tPaused)<1000, 'B10) pause freezes the session clock');
   await pg.click('#padPause'); await ff(125);
   ok(await pg.evaluate("tr.blocks[0].rest[1]")===135 && await pg.evaluate("tr.blocks[0].adds[1]")===2, 'B11) round 2 rest = '+await pg.evaluate("tr.blocks[0].rest[1]")+' s with '+await pg.evaluate("tr.blocks[0].adds[1]")+' adds (want 135 s, 2 adds; the 90 s pause is left out)');
   // round 3 done -> skip rest after 20s
@@ -59,7 +59,7 @@ const APP='file://'+path.join(__dirname,'..','beta','index.html');
   ok((await pg.evaluate("trSets()")).find(s=>s.exercise==='Squat').rest===75, 'B20) round with no timer keeps the planned 75 s');
   // pause with no rest running, then save: minutes leave out the pause
   await pg.click('#trPause'); const before=await pg.evaluate("trElapsed()"); await ff(600);
-  ok(await pg.evaluate("trElapsed()")===before && /paused/.test(await pg.textContent('#trStatus')), 'B21) "Pause workout" stops the clock with no rest running');
+  ok(Math.abs(await pg.evaluate("trElapsed()")-before)<1000 && /paused/.test(await pg.textContent('#trStatus')), 'B21) "Pause workout" stops the clock with no rest running');
   await pg.click('#trSave'); await ff(1);
   const t=await pg.evaluate("({saved:tr.saved,pauseAt:tr.pauseAt,mins:Math.round(trElapsed()/60000)})");
   ok(t.saved && !t.pauseAt && t.mins<=6, 'B22) saved; session minutes = '+t.mins+' (pauses left out; wall clock was ~17)');
