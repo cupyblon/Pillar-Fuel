@@ -28,6 +28,9 @@
 const NUTRITION_ID = '1mAkG128NSk-IzEJg-EZTNbNBz7YmmhnlBjJJAYMoyhA';
 const TRACKER_ID   = '1f2wlJqIKezVA1OHgX1OyHAwTmrXsCE019LNKDu0UvuA';
 const STRENGTH_ID  = '1LYztTug2l94R81f5B0mgak0F3pR9GkM-g1hyBuWETpo';
+// v7.0 Money tab (read-only). The app never writes to these two.
+const BUDGET_ID    = '1TmlnhFuHJ5SWfY5lR7xMevsoGAAcavCeYDdx-231tfI';   // Budget 2026 - monthly tabs
+const BILLS_ID     = '1TXqoiVJ3RxzzLCLMMA7rlSjlnDkALSrYmx__pwN95pk';   // Bill Tracker 2026
 const DAILY_FOLDER = '1lsYXiGZG0OpRZyfS1sb3sc1o-vq12Lu9';   // "YYYY-MM-DD Daily Plan" docs
 const TZ           = 'America/Chicago';
 const NOTE_COL     = 37; // Food Log column AK
@@ -74,6 +77,7 @@ function doGet(e) {
     if (p.action === 'day') return day_(date);
     if (p.action === 'plan') return readPlan_(date);
     if (p.action === 'sets') return readSets_(date);
+    if (p.action === 'budget') return budget_(date);
     throw new Error('Unknown action');
   });
 }
@@ -574,6 +578,67 @@ function readSets_(date) {
     });
   });
   return { date: date, sets: sets };
+}
+
+// ---------------------------------------------------------------- Money tab (v7.0)
+// READ-ONLY. Returns the month's budget vs actual from the "Mon YYYY budget" tab of
+// Budget 2026, plus open bills and bills for that month from Bill Tracker 2026.
+// Lines and totals are found by their NAME in column A, never by row number, so
+// adding or moving rows in the sheet does not break the app.
+const MONTHS_ = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function money_(x) {
+  if (typeof x === 'number') return x;
+  const n = Number(String(x).replace(/[$,\s]/g, ''));
+  return isNaN(n) || String(x).trim() === '' ? null : n;
+}
+function budget_(date) {
+  const y = Number(String(date).slice(0, 4)), m = Number(String(date).slice(5, 7));
+  const label = MONTHS_[m - 1] + ' ' + y;
+  const out = { month: label, found: false, lines: [], totals: {}, net: null, saved: null, hsaPaid: null, bills: [], billsFound: false };
+  const sh = SpreadsheetApp.openById(BUDGET_ID).getSheetByName(label + ' budget');
+  if (sh && sh.getLastRow() > 0) {
+    const rows = sh.getRange(1, 1, sh.getLastRow(), 3).getValues();
+    const SEC = { 'INCOME': 'income', 'NECESSARY': 'necessary', 'DISCRETIONARY': 'discretionary', 'INVESTMENT': 'investment' };
+    let cur = null;
+    rows.forEach(function (r) {
+      const a = String(r[0] == null ? '' : r[0]).trim();
+      if (!a) return;
+      const pair = { budget: money_(r[1]), actual: money_(r[2]) };
+      if (SEC[a.toUpperCase()]) { cur = SEC[a.toUpperCase()]; return; }
+      const t = a.match(/^Total (income|necessary|discretionary|investment)/i);
+      if (t) { out.totals[t[1].toLowerCase()] = pair; cur = null; return; }
+      if (/^Net cash flow/i.test(a)) { out.net = pair; cur = null; return; }
+      if (/^True savings/i.test(a)) { out.saved = pair; return; }
+      if (/^Health care paid from HSA/i.test(a)) { out.hsaPaid = pair.actual; return; }
+      if (/^PAYCHECK/i.test(a)) { cur = null; return; }
+      if (cur) out.lines.push({ section: cur, name: a, budget: pair.budget, actual: pair.actual });
+    });
+    out.found = out.lines.length > 0;
+  }
+  // Bills: anything not marked Paid, plus anything due or paid in this month.
+  const bs = SpreadsheetApp.openById(BILLS_ID).getSheetByName('Untitled');
+  if (bs && bs.getLastRow() > 0) {
+    const rows = bs.getRange(1, 1, bs.getLastRow(), 6).getValues();
+    let h = -1;
+    for (let i = 0; i < rows.length; i++) if (String(rows[i][0]).trim() === 'Vendor') { h = i; break; }
+    if (h >= 0) {
+      out.billsFound = true;
+      const col = {}; rows[h].forEach(function (v, i) { col[String(v).trim()] = i; });
+      const ym = String(date).slice(0, 7);
+      for (let i = h + 1; i < rows.length; i++) {
+        const r = rows[i], vendor = String(r[col['Vendor']] || '').trim();
+        if (!vendor) continue;
+        const due = r[col['Due Date']] ? key_(r[col['Due Date']]) : '';
+        const paidOn = r[col['Paid On']] ? key_(r[col['Paid On']]) : '';
+        const status = String(r[col['Status']] || '').trim();
+        const paid = /^paid/i.test(status);
+        if (paid && due.slice(0, 7) !== ym && paidOn.slice(0, 7) !== ym) continue;
+        out.bills.push({ vendor: vendor, amount: money_(r[col['Amount Due']]), due: due, status: status, paidOn: paidOn, paid: paid });
+      }
+      out.bills.sort(function (a, b) { return (a.due || '9999') < (b.due || '9999') ? -1 : 1; });
+    }
+  }
+  return out;
 }
 
 // Author: Grok (xAI), 2026-11-06.

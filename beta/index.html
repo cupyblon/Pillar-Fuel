@@ -143,6 +143,14 @@ textarea.f{min-height:64px;resize:vertical}
 @keyframes rflash{to{background:var(--ok);color:#000}}
 .restbar button{background:rgba(255,255,255,.2);border:0;color:#fff;border-radius:10px;padding:6px 10px;font-weight:700}
 .restbar.paused{background:var(--mute)}
+/* v7.0 money tab */
+.mrow{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:14px}
+.mrow:first-child{border-top:0}
+.mrow .a{min-width:0} .mrow .a small{display:block;color:var(--mute);font-size:12px;margin-top:2px}
+.mrow .b{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:650}
+.mrow .b small{display:block;color:var(--mute);font-size:12px;font-weight:500;margin-top:2px}
+.mrow .b.bad{color:var(--warn)} .mrow .b.good{color:var(--ok)}
+.msec{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);font-weight:600;margin:14px 0 2px}
 /* v6.5 big button: full-screen round-done pad, rest countdown, pause */
 .mini.red{background:#d81f26;color:#fff}
 .pad{position:fixed;inset:0;z-index:30;background:var(--bg);display:flex;flex-direction:column;gap:10px;
@@ -533,6 +541,26 @@ html.dash:not(.desk) main{max-width:640px}
 </section>
 
 <!-- ================= JOURNAL ================= -->
+<!-- ================= MONEY (v7.0, read-only) ================= -->
+<section id="v-money" class="hide">
+  <div class="card">
+    <div class="lbl">Money <span id="mnStatus"></span></div>
+    <div class="row">
+      <div class="stat"><div class="v" id="mnIn">–</div><div class="k">income</div></div>
+      <div class="stat"><div class="v" id="mnOut">–</div><div class="k">spent of <span id="mnPlan">–</span> plan</div></div>
+      <div class="stat"><div class="v" id="mnNet">–</div><div class="k">net cash flow</div></div>
+    </div>
+    <div class="track" style="margin-top:12px"><div class="fill" id="mnBar" style="width:0"></div></div>
+    <div class="note" id="mnPace"></div>
+  </div>
+  <div class="card"><div class="lbl">Over budget <span id="mnOverN"></span></div><div id="mnOver"></div></div>
+  <div class="card"><div class="lbl">Bills <span id="mnBillN"></span></div><div id="mnBills"></div></div>
+  <div class="card"><div class="lbl">Saved &amp; invested</div><div id="mnSave"></div></div>
+  <div class="card"><div class="lbl">Every line <span>actual / budget</span></div><div id="mnLines"></div></div>
+  <button class="btn" id="mnRefresh">Refresh from the budget sheet</button>
+  <div class="note" style="padding:0 4px 8px">Read-only. Numbers come from your Budget 2026 and Bill Tracker sheets; nothing here can change them.</div>
+</section>
+
 <section id="v-jour" class="hide">
   <div class="card">
     <div class="lbl">16 Questions</div>
@@ -592,6 +620,7 @@ html.dash:not(.desk) main{max-width:640px}
   <button data-v="nut"><span class="e">❖</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.4 4.9 5.3.8-3.9 3.8.9 5.3L12 15.3 7.3 17.8l.9-5.3L4.3 8.7l5.3-.8z"/></svg><span class="tl">Nutrients</span></button>
   <button data-v="train"><span class="e">🏋︎</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6M6 7v10M18 7v10M21 9v6M6 12h12"/></svg><span class="tl">Train</span></button>
   <button data-v="body"><span class="e">⚖︎</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h14l-1.5-11h-11z"/><circle cx="12" cy="6" r="2.5"/><path d="M12 13l2-2"/></svg><span class="tl">Body</span></button>
+  <button data-v="money"><span class="e">$</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5v19M16.5 7.5c0-1.9-2-3-4.5-3s-4.5 1.1-4.5 3.2c0 4.6 9 2.2 9 6.8 0 2.1-2 3.2-4.5 3.2s-4.5-1.2-4.5-3.2"/></svg><span class="tl">Money</span></button>
   <button data-v="out"><span class="e">☾</span><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span class="tl">Check-out</span></button>
 </nav>
 
@@ -718,7 +747,7 @@ function demoDay(date){
 
 /* ======================= STATE ======================= */
 // Bump with every release; matches CHANGELOG.md.
-const APP_VERSION='v6.5-beta', APP_VERSION_NAME='Big Red Button (BETA, demo data)';
+const APP_VERSION='v7.0-beta', APP_VERSION_NAME='Money (BETA, demo data)';
 // BETA: own storage keys (fuelbeta.*), so beta never touches production's settings or offline queue.
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const BK=k=>String(k).replace(/^fuel\./,'fuelbeta.');
@@ -780,7 +809,7 @@ function setSync(t,bad){ setTimeout(()=>{ if(typeof renderGlance==='function'&&s
   el.textContent=t||(queue.length?queue.length+' waiting to save':'Synced'); el.className='sync'+(bad?' bad':''); }
 async function load(){
   $('#demoBanner').classList.toggle('hide',live());
-  loadPlan();
+  loadPlan(); loadMoney();
   if(!live()){ state.day=demoDay(state.date); render(); setSync(); return; }
   const cached=LS.get('fuel.day.'+state.date,null); if(cached){state.day=cached; render();}
   setSync('Loading…');
@@ -1308,6 +1337,67 @@ function renderWkSets(){
 }
 
 
+/* ======================= MONEY (v7.0) ======================= */
+// Read-only view of the month's budget vs actual and bills. Follows the date at the top (its month).
+// Demo numbers below are made up. Real numbers only ever come from the backend "budget" action.
+const DEMO_MONEY={found:true,billsFound:true,
+  lines:[{section:'income',name:'Salary (net pay)',budget:5000,actual:2500},
+    {section:'necessary',name:'Mortgage',budget:1500,actual:1500},{section:'necessary',name:'Car payment',budget:400,actual:400},{section:'necessary',name:'Electric',budget:150,actual:171.4},
+    {section:'necessary',name:'Food & groceries',budget:600,actual:412.37},{section:'necessary',name:'Car maintenance',budget:0,actual:64.5},{section:'necessary',name:'Transport',budget:200,actual:118},
+    {section:'discretionary',name:'Dining out',budget:150,actual:187.25},{section:'discretionary',name:'Streaming',budget:30,actual:19.99},{section:'discretionary',name:'Gifts',budget:50,actual:0},
+    {section:'investment',name:'Bitcoin DCA',budget:300,actual:150},{section:'investment',name:'School',budget:175,actual:175}],
+  totals:{income:{budget:5000,actual:2500},necessary:{budget:2850,actual:2666.27},discretionary:{budget:230,actual:207.24},investment:{budget:475,actual:325}},
+  net:{budget:1445,actual:-698.51},saved:{budget:1100,actual:560},hsaPaid:42.1,
+  bills:[{vendor:'Sample Electric',amount:171.4,due:'-05',status:'Paid',paidOn:'-04',paid:true},{vendor:'Sample Phone',amount:120,due:'-25',status:'Invoiced',paidOn:'',paid:false},{vendor:'Sample Water',amount:88.5,due:'-28',status:'Invoiced',paidOn:'',paid:false}]};
+let money=null;
+const usd=(n,dec)=>n==null||isNaN(n)?'–':(n<0?'−':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:dec?2:0,maximumFractionDigits:dec?2:0});
+const mnMonth=()=>state.date.slice(0,7);
+function mnLabel(){ const [y,m]=state.date.split('-').map(Number); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]+' '+y; }
+async function loadMoney(force){
+  const ym=mnMonth(), k='fuel.money.'+ym;
+  if(!live()){ money={...DEMO_MONEY,month:mnLabel(),bills:DEMO_MONEY.bills.map(b=>({...b,due:ym+b.due,paidOn:b.paidOn?ym+b.paidOn:''}))}; renderMoney(); $('#mnStatus').textContent=mnLabel()+' · sample numbers'; return; }
+  money=LS.get(k,null); renderMoney();
+  if($('#v-money').classList.contains('hide')&&!force) return;            // only fetch when the tab is open
+  if(money&&!force&&Date.now()-(money.at||0)<600e3) return;                // fresh enough (10 min)
+  $('#mnStatus').textContent='Loading…';
+  try{ const j=await api({action:'budget',date:state.date}); j.at=Date.now(); LS.set(k,j); if(mnMonth()===ym){ money=j; renderMoney(); } }
+  catch(e){ $('#mnStatus').textContent=/Unknown action/.test(e.message)?'Backend needs the v7.0 Code.gs':'Could not load: '+e.message; }
+}
+function renderMoney(){
+  const m=money, T=(m&&m.totals)||{}, g=(k,f)=>T[k]&&T[k][f]!=null?T[k][f]:null;
+  $('#mnStatus').textContent=m?(m.month||mnLabel())+(m.at?' · updated '+new Date(m.at).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):''):mnLabel();
+  if(!m||!m.found){ ['mnIn','mnOut','mnNet','mnPlan'].forEach(i=>$('#'+i).textContent='–'); $('#mnBar').style.width='0'; $('#mnPace').textContent=m?'No budget tab for '+(m.month||mnLabel())+' in the Budget sheet.':'Open this tab while online to load your numbers.';
+    ['mnOver','mnSave','mnLines'].forEach(i=>$('#'+i).innerHTML=''); $('#mnOverN').textContent=''; if(!m){ $('#mnBills').innerHTML=''; $('#mnBillN').textContent=''; return; } }
+  else{
+    const spent=(g('necessary','actual')||0)+(g('discretionary','actual')||0), plan=(g('necessary','budget')||0)+(g('discretionary','budget')||0), net=m.net?m.net.actual:null;
+    $('#mnIn').textContent=usd(g('income','actual')); $('#mnOut').textContent=usd(spent); $('#mnPlan').textContent=usd(plan);
+    $('#mnNet').textContent=usd(net); $('#mnNet').style.color=net==null?'':net<0?'var(--warn)':'var(--ok)';
+    const p=plan?spent/plan:0; $('#mnBar').style.width=Math.min(100,p*100)+'%'; $('#mnBar').style.background=p>1?'var(--warn)':p>0.85?'var(--mid)':'var(--ok)';
+    // pace: share of the month gone vs share of the plan spent (current month only)
+    const [y,mo]=state.date.split('-').map(Number), dim=new Date(y,mo,0).getDate(), isNow=todayKey().slice(0,7)===mnMonth(), day=isNow?Number(todayKey().slice(8)):dim;
+    $('#mnPace').textContent=plan?Math.round(p*100)+'% of the spending plan used'+(isNow?' · day '+day+' of '+dim+' ('+Math.round(100*day/dim)+'% of the month)':'')+' · '+(plan-spent>=0?usd(plan-spent)+' left':usd(spent-plan)+' over'):'';
+    const sp=m.lines.filter(l=>l.section==='necessary'||l.section==='discretionary');
+    const over=sp.filter(l=>(l.actual||0)>(l.budget||0)+0.005).sort((a,b)=>((b.actual||0)-(b.budget||0))-((a.actual||0)-(a.budget||0)));
+    $('#mnOverN').textContent=over.length?over.length+' line'+(over.length>1?'s':''):'';
+    $('#mnOver').innerHTML=over.length?over.map(l=>`<div class="mrow"><div class="a">${esc(l.name)}<small>${usd(l.actual,1)} spent · ${l.budget?usd(l.budget,1)+' budget':'no budget set'}</small></div><div class="b bad">+${usd((l.actual||0)-(l.budget||0),1)}</div></div>`).join(''):'<div class="note" style="margin:0">Nothing over budget.</div>';
+    const btc=m.lines.find(l=>/bitcoin/i.test(l.name)), inv=T.investment;
+    $('#mnSave').innerHTML=[['True savings (Roth + HSA + Bitcoin)',m.saved],['Bitcoin bought',btc],['All investment lines',inv]].filter(x=>x[1]).map(x=>`<div class="mrow"><div class="a">${x[0]}</div><div class="b">${usd(x[1].actual,1)}<small>of ${usd(x[1].budget,1)}</small></div></div>`).join('')
+      +(m.hsaPaid?`<div class="mrow"><div class="a">Health care paid from HSA<small>info only, not in the totals</small></div><div class="b">${usd(m.hsaPaid,1)}</div></div>`:'');
+    const names={income:'Income',necessary:'Necessary',discretionary:'Discretionary',investment:'Investment'};
+    $('#mnLines').innerHTML=Object.keys(names).map(sec=>{ const ls=m.lines.filter(l=>l.section===sec); if(!ls.length) return ''; const t=T[sec]||{};
+      return `<div class="msec">${names[sec]} · ${usd(t.actual)} / ${usd(t.budget)}</div>`+ls.map(l=>{ const a=l.actual||0, b=l.budget||0, q=b?a/b:(a?1.01:0), inc=sec==='income'||sec==='investment';
+        const col=inc?(q>=1?'var(--ok)':'var(--mid)'):(q>1?'var(--warn)':q>0.85?'var(--mid)':'var(--ok)');
+        return `<div class="nu"><div class="t"><span>${esc(l.name)}</span><span><b>${usd(a,1)}</b> / ${usd(b)}</span></div><div class="track"><div class="fill" style="width:${Math.min(100,q*100)}%;background:${col}"></div></div></div>`; }).join(''); }).join('');
+  }
+  const bills=m.bills||[], open=bills.filter(b=>!b.paid), paid=bills.filter(b=>b.paid), sum=a=>a.reduce((t,b)=>t+(b.amount||0),0), tk=todayKey();
+  $('#mnBillN').textContent=m.billsFound===false?'':usd(sum(open),1)+' open · '+usd(sum(paid),1)+' paid';
+  const dshort=k=>k?Number(k.slice(5,7))+'/'+Number(k.slice(8,10)):'no date';
+  $('#mnBills').innerHTML=m.billsFound===false?'<div class="note" style="margin:0">Bill Tracker not found.</div>':!bills.length?'<div class="note" style="margin:0">No open bills and none this month.</div>'
+    :open.concat(paid).map(b=>{ const late=!b.paid&&b.due&&b.due<tk; return `<div class="mrow"><div class="a">${esc(b.vendor)}<small>${b.paid?'paid'+(b.paidOn?' '+dshort(b.paidOn):''):(late?'OVERDUE · was due ':'due ')+dshort(b.due)}${b.status&&!b.paid?' · '+esc(b.status):''}</small></div><div class="b ${b.paid?'good':late?'bad':''}">${usd(b.amount,1)}</div></div>`; }).join('');
+}
+$('#mnRefresh').onclick=()=>loadMoney(true);
+
+
 /* ======================= DAILY PLAN ======================= */
 // Reads the "YYYY-MM-DD Daily Plan" Google Doc (Markdown export) and shows 4 sections.
 const DEMO_PLAN_MD="# Sample day (demo)\n\n## TODAY'S ITINERARY\n\n  - **All day:** Sample: a friend's birthday, send a text *(Relationships)*\n  - **4:45 AM:** Workout, 2–6 exercises x 3–6 sets, aim for a sweat; out the door by 5:50 *(Physical)*\n  - **5:50 AM:** Walk 1 to the train (dark start, wear something visible) *(Physical)*\n  - **6:05–6:25 AM:** Morning journal on the train *(Emotional)*\n  - **7:30–8:00 AM:** Walk 2 to work *(Physical)*\n  - **3:55–4:46 PM:** Walk 3 to the train *(Physical)*\n  - **Train home:** Text at least one person, then study OR a reconnect call *(Relationships / Intellectual)*\n  - **6:00–7:30 PM:** Family dinner, phones away *(Relationships)*\n  - **8:30–9:00 PM:** Evening check-out + meditate *(Emotional)*\n  - **9:15 PM:** Lights out (work night) *(Physical)*\n\n## REACH OUT\n\n  - **Today: Sample cousin (cousin)**, call, 10 min. Every-other-week list, no logged contact yet.\n  - Opener: \"Hey, working from home today. Got 10 minutes to catch up?\"\n  - Coming up: a sample birthday Saturday.\n\n## SQUEEZE-INS (moving the needle toward upcoming deadlines)\n\n  - **Physical:** Sample nudge: no sweat logged this week yet. At 4:45: squats 3x10, rows 3x10, push-ups 3 sets, farmer carries 3 trips (about 25 min).\n  - **Relationships, due today:** Sample nudge: birthday text on the train in.\n  - **Emotional:** Sample nudge: bed was after 11 PM three nights; cap screens at 8:30.\n\n## MORNING JOURNAL\n\n**GRATEFUL (3)**\n\n  - 1\\) Sample: my family\n  - 2\\)\n  - 3\\)\n\n**TO BE** (love, support, build)\n\n  - Today I want to be: Sample: present at dinner\n  - Today I want to:\n\n## SUN & WEATHER (Brookfield)\n\n**SUN**\n\n  - Dawn: 5:54 AM · Sunrise: 6:24 AM\n  - Sunset: 4:45 PM · Dusk: 5:15 PM\n  - Day length: 10h 20m (-2m 25s vs yesterday)\n\n**WALKS** (skip if WFH)\n\n  - Walk 1, home to Congress Park (5:50 AM): DARK until 5:54 dawn, TWILIGHT after · sample weather\n  - Walk 2, Lake-Cook to work (7:30 AM): DAYLIGHT · sample weather\n  - Walk 3, work to Lake-Cook (3:55–4:21 PM start): DAYLIGHT, TWILIGHT after 4:45 sunset · sample weather\n  - Walk 4, Congress Park to home (5:52 PM): DARK the whole way · sample weather\n\n**WEATHER**\n\n  - Today: Sample only. The live app shows the real forecast from your Daily Plan doc.\n  - Walker call: Sample: umbrella for Walks 3 and 4.\n";
@@ -1553,7 +1643,7 @@ $('#verNote').innerHTML=`Pillars Fuel <b>${APP_VERSION}</b> "${APP_VERSION_NAME}
 $('#saveSet').onclick=()=>{ cfg={url:$('#sUrl').value.trim(),token:$('#sTok').value.trim()}; LS.set('fuel.cfg',cfg); LS.set('fuel.bootAt',0);
   if(!live()){ Object.assign(state,{goals:DEMO_GOALS,foods:DEMO_FOODS,targets:DEMO_TARGETS}); } load(); toast(live()?'Connecting…':'Demo mode'); };
 $('#refreshData').onclick=()=>{ if(!live()){ toast('Demo mode'); return; } LS.set('fuel.bootAt',0); toast('Refreshing…'); load(); };
-function show(v){ ['today','log','nut','train','body','out','jour'].forEach(x=>$('#v-'+x).classList.toggle('hide',x!==v)); $$('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+function show(v){ if(v==='money') setTimeout(()=>loadMoney(),0); ['today','log','nut','train','body','out','jour','money'].forEach(x=>$('#v-'+x).classList.toggle('hide',x!==v)); $$('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
   window.scrollTo(0,0); const sk=LS.get('fuel.skipped',[]); $('#queueNote').innerHTML=(queue.length?queue.length+' change(s) waiting to save.':'')+(sk.length?'<br>Last skipped: '+sk.map(esc).join('<br>'):''); }
 $$('nav button').forEach(b=>b.onclick=()=>show(b.dataset.v));
 $('#goLog').onclick=()=>show('log');

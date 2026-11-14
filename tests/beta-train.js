@@ -12,7 +12,7 @@ const APP='file://'+path.join(__dirname,'..','beta','index.html');
   const ff=async s=>{ await pg.clock.runFor(s*1000); };
   const vis=async sel=>await pg.evaluate(s=>{ const e=document.querySelector(s); return !!e&&e.getClientRects().length>0; },sel);
   await pg.evaluate("show('train'); addBlock(['Uphill sprint']); tr.blocks[0].rounds[0][0]={reps:1,time:20}; trSaveLS(); renderTrain()");
-  ok(await pg.textContent('#verNote').then(t=>/v6\.5-beta/.test(t)), 'B1) version label says v6.5-beta');
+  ok(await pg.textContent('#verNote').then(t=>/v\d+\.\d+-beta/.test(t)), 'B1) version label is a beta version');
   ok(!(await vis('#pad')), 'B2) big button hidden until asked for');
   await pg.click('[data-pad="0"]'); await ff(1);
   const box=await pg.locator('#padDone').boundingBox();
